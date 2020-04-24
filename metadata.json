@@ -1,0 +1,10 @@
+{
+    "author": "SamBrishes, pytesNET",
+    "email": "sam@pytes.net",
+    "website": "https://www.pytes.net",
+    "version": "0.1.0",
+    "releaseDate": "2020-04-11",
+    "license": "MIT",
+    "compatible": "3.9.0",
+    "notes": "The advanced supporter version of the Media Bludit Plugin."
+}

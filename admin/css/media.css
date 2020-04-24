@@ -1,0 +1,275 @@
+/*
+ |  Media       An advanced Media & File Manager for Bludit
+ |  @file       ./admin/css/media.css
+ |  @author     SamBrishes <sam@pytes.net>
+ |  @version    0.1.0 [0.1.0] - Alpha
+ |
+ |  @website    https://github.com/pytesNET/media
+ |  @license    X11 / MIT License
+ |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
+ */
+
+/* @start GENERAL */
+.media-title span.fa {
+     font-size: 0.9em;
+     margin-right: 0.25em;
+}
+.media-actions .btn {
+    height: 34.8px;
+}
+.media-actions .btn .fa.fa-th-list {
+    font-size: 16px;
+    line-height: 24px;
+    vertical-align: top;
+}
+.media-actions .btn .fa.fa-th-large {
+    font-size: 17px;
+    line-height: 22px;
+    vertical-align: top;
+}
+
+/* PLUS CONTENT */
+.media-toolbar.media-toolbar-plus {
+    position: relative;
+}
+.media-toolbar.media-toolbar-plus .breadcrumb {
+    padding-right: 115px;
+}
+.media-toolbar.media-toolbar-plus .tools {
+    top: 4px;
+    right: 4px;
+    position: absolute;
+}
+.media-toolbar.media-toolbar-plus .dropdown-toggle .fa {
+    margin-right: 5px;
+}
+.media-favorites-dropdown {
+    width: 230px;
+}
+.media-favorites-dropdown .tab-content {
+    max-height: 400px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+.media-favorites-dropdown .dropdown-item {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.media-favorites-tabs.nav.nav-tabs {
+    margin-top: -.5rem;
+    margin-bottom: .5rem;
+    border-width: 0;
+}
+.media-favorites-tabs.nav.nav-tabs .nav-item {
+    color: #999;
+    width: 50%;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 0;
+}
+.media-favorites-tabs.nav.nav-tabs .nav-item .nav-link {
+    padding: .75rem 0;
+    display: block;
+    border-width: 0;
+}
+.media-favorites-tabs.nav.nav-tabs .nav-item .nav-link {
+    background-color: #F6F7F8;
+}
+.media-favorites-tabs.nav.nav-tabs .nav-item:hover .nav-link {
+    color: #333;
+    box-shadow: inset 0 -2px 0 0 rgba(0, 123, 255, .5);
+}
+.media-favorites-tabs.nav.nav-tabs .nav-item.show .nav-link,
+.media-favorites-tabs.nav.nav-tabs .nav-item .nav-link.active {
+    color: rgba(0, 123, 255, 1);
+    background-color: white;
+    box-shadow: inset 0 -2px 0 0 rgba(0, 123, 255, 1);
+}
+/* @end GENERAL */
+
+/* @start TOASTS */
+.media-toasts {
+    top: 0;
+    right: 0;
+    width: 350px;
+    z-index: 1050;
+}
+.media-toast {
+    width: 100%;
+    min-width: 250px;
+    max-width: 350px;
+}
+.media-toast .toast-status {
+    width: 20px;
+    height: 20px;
+}
+/* @end TOASTS */
+
+/* @start MEDIA LIST UPLOAD CONTAINER */
+.media-list-upload {
+    position: relative;
+}
+.media-list-upload.dz-drag-hover:before {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    content: "";
+    display: block;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 5px;
+}
+.media-list-upload .media-drop-here {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    color: black;
+    width: 100%;
+    height: 100%;
+    margin: auto;
+    z-index: 60;
+    display: none;
+    position: absolute;
+    font-size: 22px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    vertical-align: middle;
+}
+.media-list-upload.dz-drag-hover .media-drop-here {
+    display: flex;
+}
+/* @end MEDIA LIST UPLOAD CONTAINER */
+
+/* @start MEDIA LIST TABLE DESIGN */
+table.media-list td.td-checkbox .file-thumbnail {
+    width: 30px;
+    height: 30px;
+    opacity: 0.5;
+    overflow: hidden;
+    transition: opacity 142ms linear;
+}
+table.media-list td.td-checkbox .file-thumbnail img {
+    min-width: 30px;
+    max-width: 50px;
+    min-height: 30px;
+    max-height: 50px;
+}
+table.media-list td.td-checkbox .file-thumbnail .fa {
+    font-size: 24px;
+    line-height: 30px;
+    padding-left: 4px;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2),
+                 2px 2px 0 rgba(0, 0, 0, 0.15),
+                 3px 3px 0 rgba(0, 0, 0, 0.1),
+                 4px 4px 0 rgba(0, 0, 0, 0.05);
+}
+table.media-list td.td-checkbox .file-thumbnail .fa.fa-folder,
+table.media-list td.td-checkbox .file-thumbnail .fa.fa-folder-o {
+    padding-left: 1px;
+}
+table.media-list tbody tr:hover td.td-checkbox .file-thumbnail {
+    opacity: 1;
+}
+
+table.media-list td.td-favorite a .fa {
+    transition: transform 142ms linear;
+}
+table.media-list td.td-favorite a:hover .fa,
+table.media-list td.td-favorite a.active .fa {
+    transform: scale(1.5);
+    -moz-transform: scale(1.5);
+    -webkit-transform: scale(1.5);
+}
+table.media-list td.td-actions .btn .fa {
+    padding-top: 2px;
+    font-size: 14px;
+    line-height: 16px;
+    vertical-align: top;
+}
+table.media-list td.td-actions .btn .fa.fa-trash {
+    font-size: 16px;
+}
+/* @end MEDIA LIST TABLE DESIGN */
+
+/* @start MEDIA LIST GRID DESIGN */
+div.media-list a.file-thumbnail {
+    height: 10rem;
+    opacity: 0.5;
+    overflow: hidden;
+    line-height: 10rem;
+    transition: opacity 142ms linear;
+}
+div.media-list a.file-thumbnail:hover {
+    opacity: 1;
+}
+div.media-list a.file-thumbnail img {
+    max-width: 100%;
+    margin-top; -50%;
+    text-align: center;
+}
+div.media-list a.file-thumbnail .fa {
+    font-size: 64px;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2),
+                 2px 2px 0 rgba(0, 0, 0, 0.15),
+                 3px 3px 0 rgba(0, 0, 0, 0.1),
+                 4px 4px 0 rgba(0, 0, 0, 0.05);
+}
+/* @end MEDIA LIST GRID DESIGN */
+
+/* @start MEDIA SINGLE DETAILS PAGE */
+.media-single-details .media-preview {
+    text-align: center;
+}
+.media-single-details .media-preview img {
+    max-width: 100%;
+    max-height: 500px;
+    margin: auto;
+    text-align: center;
+}
+.media-single-details .media-preview audio {
+    width: 100%;
+}
+.media-single-details .media-preview video {
+    width: 100%;
+    max-width: 700px;
+    max-height: 500px;
+}
+.media-single-details .media-preview.media-preview-icon {
+    height: 15rem;
+    line-height: 15rem;
+}
+.media-single-details .media-preview.media-preview-icon .fa {
+    font-size: 64px;
+}
+/* @end MEDIA SINGLE DETAILS PAGE */
+
+/* @start CONTENT MODAL */
+#media-manager-modal .modal-body {
+    position: relative;
+}
+#media-manager-modal .media-toolbar.media-toolbar-plus .btn {
+    height: 28px;
+    line-height: 26px;
+    padding: .0rem .5rem;
+}
+.media-ajax-loader {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 999999;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 3px;
+}
+.media-ajax-loader .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 3rem;
+}
+/* @end CONTENT MODAL */
