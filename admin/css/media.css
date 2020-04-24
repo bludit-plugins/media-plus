@@ -29,11 +29,14 @@
 }
 
 /* PLUS CONTENT */
+.media-toolbar {
+    white-space: nowrap;
+}
 .media-toolbar a.page-folder.btn {
     float: left;
     height: auto !important;
-    padding-top: 0.3rem !important;
-    padding-bottom: 0.3rem !important;
+    padding-top: 0.45rem !important;
+    padding-bottom: 0.45rem !important;
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
 }
