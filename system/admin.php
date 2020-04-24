@@ -184,8 +184,19 @@ declare(strict_types=1);
                 return $this->bye(false, paw__("You cannot upload files to the root directory."));
             }
 
+            // Create Path
+            $path = $data["path"] ?? "";
+            if(strpos($path, "?create") !== false) {
+                $path = explode("?", $path)[0];
+                $base = MediaManager::absolute(dirname($path)) . DS . basename($path);
+
+                if(!Filesystem::directoryExists($base)) {
+                    Filesystem::mkdir($base, true);
+                }
+            }
+
             // Validate Path
-            $path = realpath(PATH_UPLOADS_PAGES . ($data["path"] ?? ""));
+            $path = realpath(PATH_UPLOADS_PAGES . $path);
             if(!$path || strpos($path, realpath(PATH_UPLOADS_PAGES)) === false) {
                 return $this->bye(false, paw__("The passed path is invalid."));
             }
@@ -406,6 +417,16 @@ declare(strict_types=1);
 
             // Validate Path
             if(($path = MediaManager::absolute($data["path"] ?? "")) === null) {
+                if(($data["create"] ?? "false") === "true") {
+                    $base = dirname($data["path"] ?? "");
+                    if(strlen($base) === 0 || $base === ".") {
+                        $base = "/";
+                    }
+                    $base = rtrim(MediaManager::slug($base), "/") . "/" . basename($data["path"]);
+                    $base .= "?create=true";
+                    $content = $this->renderList([], $base);
+                    return $this->bye(true, paw__("The path is valid."), ["content" => $content, "path" => $base]);
+                }
                 return $this->bye(false, paw__("The passed path is invalid."));
             }
             $base = MediaManager::slug($path);

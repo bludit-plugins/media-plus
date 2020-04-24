@@ -9,6 +9,9 @@
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
+
+ global $media_admin;
+
 ?>
 <div id="media-manager-modal" class="modal" tabindex="-1" data-nonce="<?php echo $security->getTokenCSRF(); ?>">
     <div class="modal-dialog modal-xl">
@@ -28,6 +31,9 @@
                         }
                         ?>
                         <nav class="media-toolbar <?php echo isset($tools)? "media-toolbar-plus": ""; ?> m-0">
+                            <a href="<?php echo $media_admin->buildURL("media", ["path" => PAGE_IMAGES_KEY, "create" => "true"]); ?>" class="page-folder btn btn-light" data-media-action="list">
+                                <?php paw_e("Page Folder"); ?>
+                            </a>
                             <ol class="breadcrumb m-0 p-2 flex-nowrap">
                                 <?php if(empty($path)) { ?>
                                     <li class="breadcrumb-item active"><a href="<?php echo HTML_PATH_ADMIN_ROOT . "media?path=/"; ?>" data-media-action="list">root</a></li>

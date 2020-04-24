@@ -29,6 +29,18 @@
 }
 
 /* PLUS CONTENT */
+.media-toolbar a.page-folder.btn {
+    float: left;
+    height: auto !important;
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+.media-toolbar a.page-folder.btn + .breadcrumb {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
 .media-toolbar.media-toolbar-plus {
     position: relative;
 }
