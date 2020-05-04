@@ -4,7 +4,7 @@ declare(strict_types=1);
  |  Media       An advanced Media & File Manager for Bludit
  |  @file       ./system/manager.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.0 [0.1.0] - Alpha
+ |  @version    0.1.1 [0.1.0] - Alpha
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -536,7 +536,12 @@ declare(strict_types=1);
                     if($file === "." || $file === "..") {
                         continue;
                     }
-                    $real = realpath($path . DS . $file);
+                    if(($real = realpath($path . DS . $file)) === false) {
+                        if(is_link($path . DS . $file)) {
+                            @unlink($path . DS . $file);
+                        }
+                        continue;
+                    }
 
                     // Append
                     if(is_dir($real)) {

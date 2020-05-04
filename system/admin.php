@@ -4,7 +4,7 @@ declare(strict_types=1);
  |  Media       An advanced Media & File Manager for Bludit
  |  @file       ./system/admin.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.0 [0.1.0] - Alpha
+ |  @version    0.1.1 [0.1.0] - Alpha
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -56,7 +56,7 @@ declare(strict_types=1);
             if(!Session::started()) {
                 Session::start();
             }
-            
+
             if(isset($_SESSION[self::SE_STATUS]) && isset($_SESSION[self::SE_MESSAGE])) {
                 $this->status = [$_SESSION[self::SE_STATUS], $_SESSION[self::SE_MESSAGE]];
                 if(isset($_SESSION[self::SE_DATA])) {

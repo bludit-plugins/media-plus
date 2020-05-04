@@ -1,8 +1,7 @@
 Media - An advanced Media & File Manager
 ========================================
 [![Bludit](https://s.pytes.me/07dc5062)](https://www.bludit.com)
-[![Version](https://s.pytes.me/a253761d)](https://github.com/pytesNET/media/releases)
-[![Version](https://s.pytes.me/ee0a7f66)](https://gum.co/mediaplus)
+[![Version](https://s.pytes.me/7850b437)](https://github.com/pytesNET/media/releases)
 [![Support Me](https://s.pytes.me/4a1717aa)](https://buymeacoffee.com/pytesNET)
 
 The Media Bludit Plugin adds a feature-rich Media & File Manager to your Bludit Website.
