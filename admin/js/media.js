@@ -1,8 +1,8 @@
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/js/media.js
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -25,9 +25,8 @@
      |  2. GENERALs
      |      a)  Init bsCustomFileInput script
      |      b)  Init dropzone script
-     |      c)  Keep Favorites Dropdown open [PLUS FEATURE]
-     |      d)  Init [data-media-action] links
-     |      e)  Replace Core Content Images Modal
+     |      c)  [PLUS] Keep Favorites Dropdown open
+     |      d)  Replace Core Content Images Modal
      |
      |  3. MODALs
      |      a)  'mediaFocusModalForm(items)'
@@ -37,6 +36,19 @@
      |      a)  'mediaDetailsPreview(items)'
      |      b)  'mediaDetailsForm(forms)'
      |      c)  'mediaInitDetailsPage()'
+     |      d)  [PLUS] 'mediaCodeMirrorEditor()'
+     |      e)  'mediaDetailsResize()'
+     |
+     |  5. MEDIA ACTIONs
+     |      a)  'mediaActionHandler()'
+     |      b)  'media.actions.list()'
+     |      c)  [PLUS] 'media.actions.favorite()'
+     |      d)  'media.actions.embed()'
+     |      e)  'media.actions.cover()'
+     |      f)  'media.actions.delete()'
+     |      g)  'media.actions.external()'
+     |      h)  'media.actions.rename()'
+     |      i)  'media.actions.resize()'
      */
     "use strict";
 
@@ -117,7 +129,7 @@
      |  HELPER :: ADD MEDIA ITEMs
      |  @since  0.1.0
      |
-     |  @param  object  The items you want to add.
+     |  @param  object  The items to add to the media list.
      |
      |  @return bool    TRUE on success, FALSE on failure.
      */
@@ -182,7 +194,7 @@
      |  HELPER :: REMOVE MEDIA ITEMs
      |  @since  0.1.0
      |
-     |  @param  object  The items you want to remove.
+     |  @param  object  The items to remove from the media list.
      |
      |  @return bool    TRUE on success, FALSE on failure.
      */
@@ -218,7 +230,7 @@
      |  HELPER :: UPDATE MEDIA LIST
      |  @since  0.1.0
      |
-     |  @param  string  The new media list content.
+     |  @param  string  Reload the whole media list container.s
      |
      |  @return bool    TRUE if everything is fluffy, FALSE if not.
      */
@@ -330,7 +342,7 @@
     function writeEditorContent(mime, args) {
         let render = {
             link: function(markup, args) {
-                content = `<a href="${args.source}">${args.title}</a>`;
+                let content = `<a href="${args.source}">${args.title}</a>`;
                 switch(markup) {
                     case "markdown":
                         content = `[${args.title}](${args.source})`; break;
@@ -354,7 +366,7 @@
                 return content;
             },
             audio: function(markup, args) {
-                content = `<audio controls><source src="${args.source}" type="${mime}" /></audio>`;
+                let content = `<audio controls><source src="${args.source}" type="${mime}" /></audio>`;
                 switch(markup) {
                     case "textile":
                         content = "notextile.. " + content; break;
@@ -362,7 +374,15 @@
                 return content;
             },
             video: function(markup, args) {
-                content = `<video controls><source src="${args.source}" type="${mime}" /></video>`;
+                let content = `<video controls><source src="${args.source}" type="${mime}" /></video>`;
+                switch(markup) {
+                    case "textile":
+                        content = "notextile.. " + content; break;
+                }
+                return content;
+            },
+            pdf: function(markup, args) {
+                let content = `<object width="100%" height="auto" data="${args.source}" type="application/pdf" style="min-height:400px;margin:auto;"></object>`;
                 switch(markup) {
                     case "textile":
                         content = "notextile.. " + content; break;
@@ -373,6 +393,9 @@
 
         // Prepare Type
         let type = mime.substr(0, mime.indexOf("/"));
+        if(mime === "application/pdf") {
+            type = "pdf";
+        }
         if(typeof render[type] === "undefined") {
             type = "link";
         }
@@ -441,6 +464,8 @@
                 formData.append("nonce", container.attr("data-token"));
                 formData.append("tokenCSRF", container.attr("data-token"));
                 formData.append("media_action", "upload");
+
+                console.log(container.attr("data-path"));
             });
 
             // Handle File Toasts
@@ -481,101 +506,6 @@
         });
 
         /*
-         |  GENERAL :: INIT MEDIA ACTION LINKs
-         |  @since  0.1.0
-         */
-        $(document).on("click", "a[data-media-action]:not([target])", function(event) {
-            if(!media.enable) {
-                return;
-            }
-            event.preventDefault();
-            setLoader(true);
-
-            // Set Data
-            let self = this;
-            let action = this.getAttribute("data-media-action");
-
-            // Validate URL
-            let url = this.href;
-            if(url.indexOf("admin/media?") >= 0) {
-                url = url.replace("admin/media?", `admin/media/${action}?`);
-            } else if(url.endsWith("admin/media")) {
-                url = url + "/list?path=/";
-            }
-            if(url.indexOf("media_action=") < 0) {
-                url = `${url}&media_action=${action}`;
-            }
-            if(url.indexOf("nonce=") < 0) {
-                url = `${url}&nonce=${$(".media-list").attr("data-token")}`;
-            }
-            if(url.indexOf("tokenCSRF=") < 0) {
-                url = `${url}&tokenCSRF=${$(".media-list").attr("data-token")}`;
-            }
-
-            // Insert Media File
-            if(this.getAttribute("data-media-action") === "embed") {
-                let type = this.getAttribute("data-media-mime");
-                let source = this.href.substr(0, this.href.indexOf("?"));
-                let title = this.getAttribute("data-media-name");
-
-                writeEditorContent(type, {source: source, title: title});
-                return $("#media-manager-modal").modal("hide") && setLoader(false);
-            }
-
-            // Set as Cover Image
-            if(this.getAttribute("data-media-action") === "cover") {
-                $("#jscoverImage").val(this.href.substr(0, this.href.indexOf("?")));
-                $("#jscoverImagePreview").attr("src", this.href.substr(0, this.href.indexOf("?")));
-                return $("#media-manager-modal").modal("hide") && setLoader(false);
-            }
-
-            // AJAX Request
-            $.get({ url: url, dataType: "json" }).done(function(data) {
-                createToast("status", "success", media.strings[`js-link-${action}`], data.message);
-
-                // List Items
-                if(action === "list" && typeof data.data.content !== "undefined") {
-                    updateMediaList(data.data.content);
-                    updateBreadcrumbs(data.data.path, data.data.file);
-
-                    // Init Details Page
-                    if($(".media-list").hasClass("media-single-details")) {
-                        mediaInitDetailsPage();
-                    }
-
-                    // Update Layout Buttons
-                    let layout = $(".media-list")[0].tagName.toUpperCase() === "TABLE";
-                    $(`[data-media-layout="table"]`)[layout? "addClass": "removeClass"]("active");
-                    $(`[data-media-layout="grid"]`)[layout? "removeClass": "addClass"]("active");
-                }
-
-                // Delete Items
-                if(action === "delete" && typeof data.data.items !== "undefined") {
-                    removeMediaItems(data.data.items, data.data.type);
-                }
-
-                // PLUS FEATURE :: Favorite Items
-                if(action === "favorite" && typeof data.data.favorite !== "undefined") {
-                   if(data.data.favorite[1]) {
-                       self.classList.add("active");
-                       self.querySelector(".fa").classList.remove("fa-heart-o");
-                       self.querySelector(".fa").classList.add("fa-heart");
-                   } else {
-                       self.classList.remove("active");
-                       self.querySelector(".fa").classList.remove("fa-heart");
-                       self.querySelector(".fa").classList.add("fa-heart-o");
-                   }
-               }
-
-               // Disable Loader
-               setLoader(false);
-            }).fail(function(xhr) {
-                createToast("status", "danger", media.strings[`js-link-${action}`], buildMessage(xhr.responseJSON));
-                setLoader(false);
-            });
-        });
-
-        /*
          |  GENERAL :: REPLACE CORE MODAL WITH MEDIA MODAL
          |  @since  0.1.0
          */
@@ -611,6 +541,23 @@
             });
         }
 
+        /*
+         |  MODALS :: INIT MODAL DATA
+         |  @since  0.1.0
+         |
+         |  @param  object  All available modal links.
+         |
+         |  @return void
+         */
+        function mediaModalInit(items) {
+            items.on("show.bs.modal", function(event) {
+                $(this).find('[data-media-value]').each(function() {
+                    this.value = $(event.relatedTarget).attr("data-media-" + this.getAttribute("data-media-value"));
+                });
+            });
+        }
+        mediaModalInit($(".media-modal"));
+
 
         /*
          |  MODALS :: FOCUS MODAL INPUT
@@ -627,6 +574,7 @@
         }
         mediaFocusModalForm($(".media-modal"));
 
+
         /*
          |  MODALS :: SUBMIT MODAL FORM
          |  @since  0.1.0
@@ -636,7 +584,7 @@
          |  @return void
          */
         function mediaSubmitModalForm(forms) {
-            if(!media.enable) {
+            if(!media.admin) {
                 return;
             }
 
@@ -717,7 +665,7 @@
          |  @return void
          */
         function mediaDetailsForm(forms) {
-            if(!media.enable) {
+            if(!media.admin) {
                 return;
             }
 
@@ -770,5 +718,282 @@
             bsCustomFileInput.init();
         }
         mediaInitDetailsPage();
+
+
+        /*
+         |  DETAILS :: INIT CODEMIRROR EDITOR
+         |  @since  0.2.0
+         |
+         |  @return void
+         */
+        function mediaCodeMirrorEditor(textarea) {
+            var type = textarea.attr("data-type");
+            var myCodeMirror = CodeMirror.fromTextArea(textarea.get(0), {
+                mode: type,
+                theme: "neo",
+                lineNumbers: true,
+            });
+        }
+        if($("#media-plus-file-editor").length > 0) {
+            mediaCodeMirrorEditor($("#media-plus-file-editor"));
+        }
+
+
+        /*
+         |  ACTIONS :: HANDLE MEDIA ACTIONs
+         |  @since  0.2.0
+         */
+        function mediaActionHandler(event) {
+            let action = this.getAttribute("data-media-action");
+
+            if(action in media.actions) {
+                if(media.actions[action].call(this, event)) {
+                    event.preventDefault();
+                }
+            }
+        }
+        $(document).on("click", "a[data-media-action]:not([target]),button[data-media-action]:not(:disabled):not([disabled])", mediaActionHandler);
+
+        /*
+         |  ACTIONS :: SUBMIT MEDIA ACTION
+         |  @since  0.2.0
+         */
+        function mediaActionSubmit(url, action, callback) {
+            if(url.indexOf("admin/media?") >= 0) {
+                url = url.replace("admin/media?", `admin/media/${action}?`);
+            } else if(url.endsWith("admin/media")) {
+                url = url + "/list?path=/";
+            }
+            if(url.indexOf("media_action=") < 0) {
+                url = `${url}&media_action=${action}`;
+            }
+            if(url.indexOf("nonce=") < 0) {
+                url = `${url}&nonce=${$(".media-list").attr("data-token")}`;
+            }
+            if(url.indexOf("tokenCSRF=") < 0) {
+                url = `${url}&tokenCSRF=${$(".media-list").attr("data-token")}`;
+            }
+
+            // AJAX Request
+            $.get({ url: url, dataType: "json" }).done(function(data) {
+                createToast("status", "success", media.strings[`js-link-${action}`], data.message);
+                callback.call(this, "success", data);
+            }).fail(function(xhr) {
+                createToast("status", "danger", media.strings[`js-link-${action}`], buildMessage(xhr.responseJSON));
+                callback.call(this, "error", data);
+            });
+        }
+
+
+        /*
+         |  ACTIONS OBJECT
+         |  @since  0.2.0
+         */
+        media.actions = {
+            /*
+            |  ACTION :: LIST CONTENT
+            |  @since  0.2.0
+            */
+            list: function(event) {
+                if(!media.admin) {
+                    return false;
+                }
+                setLoader(true);
+
+                // Call Ajax
+                var self = this;
+                mediaActionSubmit(this.href, "list", function(status, data) {
+                    setLoader(false);
+                    if(status === "error" || typeof data.data === "undefined") {
+                        return false;
+                    }
+
+                    // Update Data
+                    updateMediaList(data.data.content);
+                    updateBreadcrumbs(data.data.path, data.data.file);
+
+                    // Init Details Page
+                    if($(".media-list").hasClass("media-single-details")) {
+                        mediaInitDetailsPage();
+                    }
+
+                    // Update Layout Buttons
+                    let layout = $(".media-list")[0].tagName.toUpperCase() === "TABLE";
+                    $(`[data-media-layout="table"]`)[layout? "addClass": "removeClass"]("active");
+                    $(`[data-media-layout="grid"]`)[layout? "removeClass": "addClass"]("active");
+                });
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: FAVORITE CONTENT
+            |  @since  0.2.0
+            */
+            favorite: function(event) {
+                if(!media.admin) {
+                    return false;
+                }
+                setLoader(true);
+
+                // Call Ajax
+                var self = this;
+                mediaActionSubmit(this.href, "list", function(status, data) {
+                    setLoader(false);
+                    if(status === "error") {
+                        return false;
+                    }
+
+                    // Set Favorite
+                    if(data.data.favorite[1]) {
+                        self.classList.add("active");
+                        self.querySelector(".fa").classList.remove("fa-heart-o");
+                        self.querySelector(".fa").classList.add("fa-heart");
+                    } else {
+                        self.classList.remove("active");
+                        self.querySelector(".fa").classList.remove("fa-heart");
+                        self.querySelector(".fa").classList.add("fa-heart-o");
+                    }
+                });
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: EMBED CONTENT
+            |  @since  0.2.0
+            */
+            embed: function(event) {
+                let type = this.getAttribute("data-media-mime");
+                let title = this.getAttribute("data-media-name");
+                let source = this.href.substr(0, this.href.indexOf("?"));
+
+                writeEditorContent(type, {title: title, source: source});
+                $("#media-manager-modal").modal("hide");
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: SET AS COVER IMAGE
+            |  @since  0.2.0
+            */
+            cover: function(event) {
+                $("#jscoverImage").val(this.href.substr(0, this.href.indexOf("?")));
+                $("#jscoverImagePreview").attr("src", this.href.substr(0, this.href.indexOf("?")));
+                $("#media-manager-modal").modal("hide");
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: DELETE CONTENT
+            |  @since  0.2.0
+            */
+            delete: function(event) {
+                if(!media.admin) {
+                    return false;
+                }
+                setLoader(true);
+
+                // Call Ajax
+                var self = this;
+                mediaActionSubmit(this.href, "list", function(status, data) {
+                    setLoader(false);
+                    if(status === "error") {
+                        return false;
+                    }
+
+                    // Remove Media Item
+                    removeMediaItems(data.data.items, data.data.type);
+                });
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: OPEN CONTENT IN NEW TAB
+            |  @since  0.2.0
+            */
+            external: function(event) {
+                window = window.open(this.href, "media-preview");
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: RENAME CONTENT [DETAILS VIEW]
+            |  @since  0.2.0
+            */
+            rename: function(event) {
+                let form = $('form[data-media-form="rename"]');
+                let input = $('input[name="rename"]');
+
+                if(input.prop("readonly")) {
+                    input.prop("readonly", false).focus();
+                    input.get(0).setSelectionRange(input.val().lastIndexOf("."), input.val().lastIndexOf("."));
+
+                    $(this).parent().children("[data-media-value]").removeClass("d-none");
+                    $(this).parent().children(":not([data-media-value])").addClass("d-none");
+                } else {
+                    if(this.getAttribute("data-media-value") === "cancel") {
+                        let value = form.find('input[name="path"]').val().replace(/\\/g, "/");
+                        input.val(value.substr(value.lastIndexOf("/")+1));
+                        input.prop("readonly", true);
+
+                        $(this).parent().children(":not([data-media-value])").removeClass("d-none");
+                        $(this).parent().children("[data-media-value]").addClass("d-none");
+                    }
+
+                    if(this.getAttribute("data-media-value") === "submit") {
+                        if(!media.admin) {
+                            form.submit();
+                            return true;
+                        }
+
+                    }
+                }
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: EDIT CONTENT [DETAILS VIEW]
+            |  @since  0.2.0
+            */
+            edit: function(event) {
+                let form = $('form[data-media-form="edit"]');
+
+                if(this.getAttribute("data-media-value") === "submit") {
+                    if(!media.admin) {
+                        form.submit();
+                        return true;
+                    }
+                }
+                return true;
+            },
+
+
+            /*
+            |  ACTION :: RESIZE DETAILS PAGE [DETAILS VIEW]
+            |  @since  0.2.0
+            */
+            resize: function(event) {
+                let cols = $(".media-single-details > .row > div");
+                if(cols.length === 2) {
+                    if(cols.first().hasClass("col-8")) {
+                        cols.first().removeClass("col-8").addClass("col-12");
+                        cols.last().removeClass("col-4 pl-5").addClass("col-12 row px-5 py-5 justify-content-around align-items-start");
+                        this.innerHTML = `<svg class="media-icon"><use href="#octicon-screen-normal" /></svg>`;
+                    } else {
+                        cols.first().addClass("col-8").removeClass("col-12");
+                        cols.last().addClass("col-4 pl-5").removeClass("col-12 row px-5 py-5 justify-content-around align-items-start");
+                        this.innerHTML = `<svg class="media-icon"><use href="#octicon-screen-full" /></svg>`;
+                    }
+                    return true;
+                }
+                return false;
+            }
+        };
     });
 }));

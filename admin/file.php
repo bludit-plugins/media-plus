@@ -1,9 +1,9 @@
 <?php
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/file.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -27,26 +27,24 @@
 	}
 ?>
 
-<div class="media-actions row">
+<div class="media-actionbar row">
     <div class="col-sm">
         <?php if(!empty($relative)) { ?>
-            <a href="<?php echo $media_admin->buildURL("media", ["path" => MediaManager::slug($relative)]); ?>" class="btn btn-success" data-media-action="back">
-				<span class="fa fa-arrow-left"></span> <?php paw_e("Go Back"); ?>
+            <?php
+				if(strpos($slug, "/") !== false) {
+					$back = substr($slug, 0, strrpos($slug, "/"));
+				} else {
+					$back = "";
+				}
+            ?>
+            <a href="<?php echo $media_admin->buildURL("media", ["path" => $back]); ?>" class="btn btn-success" data-media-action="list">
+				<span class="fa fa-arrow-left"></span> <?php bt_e("Go Back"); ?>
 			</a>
         <?php } ?>
     </div>
 
     <div class="col-sm text-right">
-		<?php
-			$delete = $media_admin->buildURL("media/delete", [
-				"nonce"         => $security->getTokenCSRF(),
-				"media_action"  => "delete",
-				"file"          => $file
-			]);
-		?>
-        <a href="<?php echo $delete; ?>" class="btn btn-danger">
-            <span class="fa fa-trash"></span><?php paw_e("Delete File"); ?>
-        </a>
+		
     </div>
 </div>
 
@@ -57,20 +55,18 @@
 
 			// Breadbrumbs || Search
             $sub = [];
-            $parts = explode(DS, trim($relative, DS));
             $count = 0;
-            foreach($parts AS $folder) {
+            foreach(explode(DS, dirname($relative)) AS $folder) {
                 $sub[] = $folder;
                 $crumb = $media_admin->buildURL("media", ["path" => implode("/", $sub)]);
                 ?><li class="breadcrumb-item"><a href="<?php echo $crumb; ?>" data-media-action="list"><?php echo $folder; ?></a></li><?php
             }
 		?>
-		<li class="breadcrumb-item active"><?php echo basename($file); ?></li>
+		<li class="breadcrumb-item active"><?php echo $basename; ?></li>
     </ol>
 
 	<?php if(PAW_MEDIA_PLUS) { ?>
         <?php
-			$relative = MediaManager::relative($file);
             $favorite = $media_admin->buildURL("media/favorite", [
                 "nonce"         => $security->getTokenCSRF(),
                 "media_action"  => "favorite",
@@ -78,12 +74,12 @@
             ]);
         ?>
 		<div class="tools btn-group">
-	        <a href="<?php echo $favorite; ?>" class="btn btn-outline-danger <?php echo $media_admin->isFavorite($file)? "active": ""; ?>">
-	            <span class="fa <?php echo $media_admin->isFavorite($file)? "fa-heart": "fa-heart-o"; ?>"></span>
+	        <a href="<?php echo $favorite; ?>" class="btn btn-outline-danger <?php echo $media_admin->isFavorite($relative)? "active": ""; ?>" data-media-action="favorite">
+	            <span class="fa <?php echo $media_admin->isFavorite($relative)? "fa-heart": "fa-heart-o"; ?>"></span>
 	        </a>
 		</div>
 	<?php } ?>
 
 </nav>
 
-<?php print($media_admin->renderFile($file)); ?>
+<?php print($media_admin->renderFile($absolute)); ?>

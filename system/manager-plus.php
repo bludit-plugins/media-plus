@@ -1,16 +1,18 @@
 <?php
 declare(strict_types=1);
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./system/manager-plus.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
+    defined("BLUDIT") or die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!");
 
+    // [Plus] File Handler
     class MediaManagerPlus extends MediaManager {
         /*
          |  HANDLE :: SEARCH CONTENT
@@ -78,14 +80,16 @@ declare(strict_types=1);
          |  HANDLE :: LIST CONTENT [ATTACH SEARCH]
          |  @since  0.1.0
          |
-         |  @param  string  The path to the directory, which should be listed.
+         |  @param  string  The path to the directory to show, null to use the root dir.
+         |  @param  int     The limit of returning items, use 0 to return everything.
+         |  @param  int     The current page number, starting with 0.
          |
          |  @return multi   The files and folders within the directory, null on failure.
          */
-        public function list(?string $folder = null): ?array {
+        public function list(?string $path = null, int $limit = 0, int $page = 0): ?array {
             $search = $_POST["search"] ?? $_GET["search"] ?? null;
             if(empty($search)) {
-                return parent::list($folder);
+                return parent::list($path, $limit, $page);
             }
             return $this->search($search, $folder);
         }

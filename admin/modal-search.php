@@ -1,9 +1,9 @@
 <?php
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/modal-search.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -14,7 +14,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><?php paw_e("Search for your Files"); ?></h5>
+                <h5 class="modal-title"><?php bt_e("Search for your Files"); ?></h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
@@ -26,9 +26,9 @@
                     <input type="hidden" name="path" value="<?php echo MediaManager::slug($relative); ?>" />
 
                     <div class="input-group">
-                        <input type="text" class="form-control" name="search" value="<?php echo $media_admin->search; ?>" placeholder="<?php paw_e("Search for..."); ?>" />
+                        <input type="text" class="form-control" name="search" value="<?php echo $media_admin->search; ?>" placeholder="<?php bt_e("Search for..."); ?>" />
                         <div class="input-group-append">
-                            <button name="media_action" value="search" class="btn btn-primary"><?php paw_e("Search"); ?></button>
+                            <button name="media_action" value="search" class="btn btn-primary"><?php bt_e("Search"); ?></button>
                         </div>
                     </div>
                 </form>

@@ -1,16 +1,15 @@
 <?php
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/modal.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
-
- global $media_admin;
+    global $media_admin;
 
 ?>
 <div id="media-manager-modal" class="modal" tabindex="-1" data-nonce="<?php echo $security->getTokenCSRF(); ?>">
@@ -31,8 +30,8 @@
                         }
                         ?>
                         <nav class="media-toolbar <?php echo isset($tools)? "media-toolbar-plus": ""; ?> m-0">
-                            <a href="<?php echo $media_admin->buildURL("media", ["path" => PAGE_IMAGES_KEY, "create" => "true"]); ?>" class="page-folder btn btn-light" data-media-action="list">
-                                <?php paw_e("Page Folder"); ?>
+                            <a href="<?php echo $media_admin->buildURL("media", ["path" => "pages/" . PAGE_IMAGES_KEY, "create" => "true"]); ?>" class="page-folder btn btn-light" data-media-action="list">
+                                <?php bt_e("Page Folder"); ?>
                             </a>
                             <ol class="breadcrumb m-0 p-2 flex-nowrap">
                                 <?php if(empty($path)) { ?>
@@ -52,22 +51,22 @@
                     <div class="text-right pl-2">
                         <div class="btn-group">
                             <button class="btn btn-light" data-toggle="modal" data-target="#media-create-folder">
-                                <span class="fa fa-folder"></span><?php paw_e("Create Folder"); ?>
+                                <span class="fa fa-folder"></span><?php bt_e("Create Folder"); ?>
                             </button>
                             <button class="btn btn-light media-trigger-upload clickable">
-                                <span class="fa fa-upload"></span><?php paw_e("Upload"); ?>
+                                <span class="fa fa-upload"></span><?php bt_e("Upload"); ?>
                             </button>
                         </div>
 
                         <div class="btn-group">
-                            <?php $href = $media_admin->buildURL("media", ["layout" => "table"], false); ?>
+                			<?php $href = $media_admin->buildURL("media", ["layout" => "table"], false); ?>
                             <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "table"? "active": ""; ?>" data-media-action="list" data-media-layout="table">
-                                <span class="fa fa-th-list"></span>
+                				<svg class="media-icon"><use href="#octicon-three-bars" /></svg>
                             </a>
 
-                            <?php $href = $media_admin->buildURL("media", ["layout" => "grid"], false); ?>
+                			<?php $href = $media_admin->buildURL("media", ["layout" => "grid"], false); ?>
                             <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "grid"? "active": ""; ?>" data-media-action="list" data-media-layout="grid">
-                                <span class="fa fa-th-large"></span>
+                				<svg class="media-icon"><use href="#octicon-display-grid" /></svg>
                             </a>
                         </div>
                     </div>

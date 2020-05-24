@@ -1,0 +1,514 @@
+/*!
+ |  Media       The advanced Media & File Manager for Bludit
+ |  @file       ./admin/sass/media.scss
+ |  @author     SamBrishes <sam@pytes.net>
+ |  @version    0.2.0 [0.1.0] - Beta
+ |
+ |  @website    https://github.com/pytesNET/media
+ |  @license    X11 / MIT License
+ |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
+ */
+
+
+//  General
+// ––––––––––––––––––––––––––––––
+
+.form-control.form-control-clean[readonly] {
+    border-color: transparent;
+    background-color: transparent;
+}
+.media-toasts {
+    top: 0;
+    right: 0;
+    width: 350px;
+    z-index: 1050;
+}
+.media-toast {
+    width: 100%;
+    min-width: 250px;
+    max-width: 350px;
+
+    .toast-status {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+
+//  Media Icon
+// ––––––––––––––––––––––––––––––
+
+.media-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: top;
+
+    &.icon-white {
+        fill: white;
+    }
+}
+.btn .media-icon {
+    margin-top: .2rem;
+}
+
+
+//  Media Action Buttons
+// ––––––––––––––––––––––––––––––
+
+.media-action {
+    color: rgba(108, 117, 125, 0.8);
+    width: 30px;
+    height: 28px;
+    margin: 0;
+    padding: 6px 0 0 4px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: top;
+    border-radius: 2px;
+    background-color: rgba(108, 117, 125, 0.05);
+    transition: background 142ms linear;
+
+    .fa {
+        margin: -2px 0 0 -3px;
+        padding: 0;
+        display: inline-block;
+        vertical-align: top;
+    }
+    svg {
+        fill: rgba(108, 117, 125, 0.8);
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        vertical-align: top;
+        transition: fill 142ms linear;
+    }
+
+    /* Colors */
+    &.action-primary:hover,
+    &.action-primary.active {
+        color: #007bff;
+        background-color: rgba(0, 123, 255, 0.095);
+
+        svg {
+            fill: #007bff;
+        }
+    }
+    &.action-secondary:hover,
+    &.action-secondary.active {
+        color: #6c757d;
+        background-color: rgba(108, 117, 125, 0.095);
+
+        svg {
+            fill: #6c757d;
+        }
+    }
+    &.action-success:hover,
+    &.action-success.active {
+        color: #28a745;
+        background-color: rgba(40, 167, 69, 0.095);
+
+        svg {
+            fill: #28a745;
+        }
+    }
+    &.action-danger:hover,
+    &.action-danger.active {
+        color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.095);
+
+        svg {
+            fill: #dc3545;
+        }
+    }
+    &.action-warning:hover,
+    &.action-warning.active {
+        color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.095);
+
+        svg {
+            fill: #ffc107;
+        }
+    }
+    &.action-info:hover,
+    &.action-info.active {
+        color: #17a2b8;
+        background-color: rgba(23, 162, 184, 0.095);
+
+        svg {
+            fill: #17a2b8;
+        }
+    }
+}
+
+//  Media AJAX Loader
+// ––––––––––––––––––––––––––––––
+
+.media-ajax-loader {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 999999;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 3px;
+}
+.media-ajax-loader .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 3rem;
+}
+
+
+//  Media Modals
+// ––––––––––––––––––––––––––––––
+
+#media-manager-modal {
+    .modal-body {
+        position: relative;
+    }
+    .media-toolbar.media-toolbar-plus .btn {
+        height: 28px;
+        padding: .0rem .5rem;
+        line-height: 26px;
+    }
+}
+
+
+//  Media Page Header
+// ––––––––––––––––––––––––––––––
+
+.media-title span.fa {
+    font-size: 0.9em;
+    margin-right: 0.25em;
+}
+.media-actionbar {
+    .btn {
+        height: 34.8px;
+
+        &[data-media-layout="table"],
+        &[data-media-layout="grid"] {
+            width: 40px;
+            text-align: center;
+
+            svg {
+                fill: #6c757d;
+            }
+            &.active svg {
+                fill: #212529;
+            }
+        }
+    }
+}
+
+
+//  Media Toolbar
+// ––––––––––––––––––––––––––––––
+
+.media-toolbar {
+    white-space: nowrap;
+
+    &.media-toolbar-plus {
+        position: relative;
+    }
+    .breadcrumb {
+        padding-right: 115px;
+        background-color: darken(#F6F8FA, 1%);
+    }
+    .tools {
+        top: 4px;
+        right: 4px;
+        position: absolute;
+
+        .dropdown-toggle .fa {
+            margin-right: 5px;
+        }
+    }
+
+    /* Modal Page Folder */
+    a.page-folder {
+        float: left;
+        height: 36px !important;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+
+        & + .breadcrumb {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+    }
+
+    /* [PLUS] Favorites */
+    .media-favorites-dropdown {
+        width: 230px;
+        padding: 0;
+        overflow: hidden;
+        background-color: #F6F8FA;
+
+        .nav.nav-tabs {
+            margin: 0;
+            padding: .5rem .5rem 0;
+            border-width: 0;
+
+            .nav-item {
+                width: 50%;
+                font-size: 12px;
+                padding: 0;
+                text-align: center;
+                border-radius: 0;
+
+                .nav-link {
+                    color: #6c757d;
+                    padding: .5rem 0;
+                    display: block;
+                    border-width: 1px;
+                    border-color: transparent;
+                    transition: color 142ms linear;
+                }
+                &:hover .nav-link {
+                    color: #212529;
+                }
+                &.show .nav-link, .nav-link.active {
+                    color: rgba(0, 123, 255, 1);
+                    border-color: #e1e4e8 #e1e4e8 white #e1e4e8;
+                    background-color: white;
+
+                }
+            }
+        }
+        .tab-content {
+            max-height: 300px;
+            padding: 0.5rem 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: white;
+            border-top: 1px solid #e1e4e8;
+
+            &.tab-content-single {
+                border-top: 0;
+            }
+        }
+        .dropdown-item {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+}
+
+
+//  Media List Upload
+// ––––––––––––––––––––––––––––––
+
+.media-list-upload {
+    position: relative;
+
+    &.dz-drag-hover:before {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        content: "";
+        display: block;
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.35);
+        border-radius: 5px;
+    }
+    .media-drop-here {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        color: black;
+        width: 100%;
+        height: 100%;
+        margin: auto;
+        z-index: 60;
+        display: none;
+        position: absolute;
+        font-size: 22px;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        vertical-align: middle;
+    }
+    &.dz-drag-hover .media-drop-here {
+        display: flex;
+    }
+}
+
+
+//  Media List Table Design
+// ––––––––––––––––––––––––––––––
+
+table.media-list {
+    thead {
+        td, th {
+            border: 0 !important;
+        }
+    }
+    tbody {
+        tr:last-child {
+            td, th {
+                border-bottom: 1px solid #dee2e6;
+            }
+        }
+        tr {
+            td.td-checkbox .file-thumbnail {
+                width: 30px;
+                height: 30px;
+                opacity: 0.5;
+                overflow: hidden;
+                border-radius: 2px;
+                transition: opacity 142ms linear;
+
+                img {
+                    min-width: 30px;
+                    max-width: 50px;
+                    min-height: 30px;
+                    max-height: 50px;
+                }
+                .fa {
+                    font-size: 24px;
+                    line-height: 30px;
+                    padding-left: 4px;
+                    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2),
+                                 2px 2px 0 rgba(0, 0, 0, 0.15),
+                                 3px 3px 0 rgba(0, 0, 0, 0.1),
+                                 4px 4px 0 rgba(0, 0, 0, 0.05);
+
+                    &.fa-folder, &.fa-folder-o {
+                        padding-left: 1px;
+                    }
+                }
+            }
+            &:hover td.td-checkbox .file-thumbnail {
+                opacity: 1;
+            }
+            td.td-filename strong {
+                font-weight: 600;
+            }
+            td.td-favorite a {
+                .fa {
+                    transition: transform 142ms linear;
+                }
+                &:hover .fa, &.active .fa {
+                    transform: scale(1.5);
+                    -moz-transform: scale(1.5);
+                    -webkit-transform: scale(1.5);
+                }
+            }
+            td.td-actions .btn .fa {
+                padding-top: 2px;
+                font-size: 14px;
+                line-height: 16px;
+                vertical-align: top;
+
+                &.fa-trash {
+                    font-size: 16px;
+                }
+            }
+        }
+    }
+}
+
+
+//  Media List Grid Design
+// ––––––––––––––––––––––––––––––
+
+div.media-list {
+    a.file-thumbnail {
+        height: 10rem;
+        opacity: 0.5;
+        overflow: hidden;
+        line-height: 10rem;
+        transition: opacity 142ms linear;
+
+        &:hover {
+            opacity: 1;
+        }
+        img {
+            max-width: 100%;
+            margin-top: -50%;
+            text-align: center;
+        }
+        .fa {
+            font-size: 64px;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2),
+                         2px 2px 0 rgba(0, 0, 0, 0.15),
+                         3px 3px 0 rgba(0, 0, 0, 0.1),
+                         4px 4px 0 rgba(0, 0, 0, 0.05);
+        }
+    }
+}
+
+
+//  Media Details Page
+// ––––––––––––––––––––––––––––––
+
+.media-single-details {
+    .media-preview {
+        text-align: center;
+
+        img {
+            max-width: 100%;
+            margin: auto;
+            text-align: center;
+        }
+        audio {
+            width: 100%;
+        }
+        video {
+            width: 100%;
+            max-width: 700px;
+            max-height: 500px;
+        }
+        object {
+            width: 100%;
+            max-width: 700px;
+            min-height: 400px;
+            max-height: 500px;
+        }
+        &.media-preview-icon,
+        &.media-preview-text {
+            height: 15rem;
+            line-height: 15rem;
+
+            .fa {
+                font-size: 64px;
+            }
+        }
+        &.media-preview-text {
+            height: auto;
+            min-height: 15rem;
+            line-height: 1.5;
+        }
+        textarea {
+            width: 100%;
+            min-height: 15rem;
+            display: block;
+            border: 0;
+            resize: vertical;
+        }
+    }
+    .media-history {
+        max-height: 300px;
+        overflow-y: auto;
+
+        li {
+            padding: .5rem 0;
+            font-size: 0.8rem;
+
+            strong {
+                color: #17a2b8;
+                font-weight: 600;
+                display: block;
+            }
+        }
+    }
+}

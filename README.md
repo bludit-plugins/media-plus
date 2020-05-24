@@ -1,5 +1,5 @@
-Media - An advanced Media & File Manager
-========================================
+Media - The advanced Media & File Manager
+=========================================
 [![Bludit](https://s.pytes.me/07dc5062)](https://www.bludit.com)
 [![Version](https://s.pytes.me/7850b437)](https://github.com/pytesNET/media/releases)
 [![Support Me](https://s.pytes.me/4a1717aa)](https://buymeacoffee.com/pytesNET)
@@ -8,24 +8,25 @@ The Media Bludit Plugin adds a feature-rich Media & File Manager to your Bludit 
 
 You can use **Media** directly on its own custom administration page, but it also takes over the
 known "Images" popup on the content creation view. So you don't need to switch between your browser
-tabs to directly insert your files (the **Media** Plugin supports Audio & Video files too).
+tabs to directly insert your files (the **Media** Plugin supports Audio, Video & PDF files too).
 
 Features
 --------
 -   **Walk** smoothly through your upload directories
 -   **Revise**, **Rename** and **Delete** your stuff quickly
 -   **Embed** your files seamless while editing your posts...
-    -   ...with support for **Image**, **Video** & **Audio** files
+    -   ...with support for **Image**, **Video**, **Audio** & **PDF** files
 -   *[COMING]* Automatic **Thumbnail** Creation (with adaptable size)
 -   *[COMING]* A better and configurable way to **Insert** your files
 
 Support us with Media+ or a Coffee
 ----------------------------------
 You can support us and the development of our **Media** Bludit Plugin with the purchase of the
-**MediaPlus** version, which contains always the latest features and the following exclusive stuff.
+**Media+** version, which contains always the latest features and the following exclusive stuff.
 
 -   **Search** through your folders, **Find** your files quickly
 -   **Favourite** folders and files so you **never lose** them again
+-   **Edit** plain text files directly with common syntax highlighting support
 -   One-Time Payment: **Pay once, Get all future updates**
 -   *[COMING]* **Resize** and **Edit** your images with an easy-to-use tool
 -   *[COMING]* **Offer** your awesome pictures in **different sizes**
@@ -34,7 +35,7 @@ You can support us and the development of our **Media** Bludit Plugin with the p
 <br>
 
 <p align="center" style="text-align: center;">
-<a href="https://gum.co/mediaplus"><b>You can buy the MediaPlus Plugin on gumroad.com</b></a>
+<a href="https://gum.co/mediaplus"><b>You can buy Media+ for 3 USD on gumroad.com</b></a>
 </p>
 
 <p align="center" style="text-align: center;">
@@ -65,8 +66,9 @@ Dependencies
 ------------
 The following awesome dependencies are included in this package.
 
--   [Dropzone.js](https://www.dropzonejs.com)
 -   [bsCustomFileInput](https://github.com/Johann-S/bs-custom-file-input)
+-   [CodeMirror](https://codemirror.net)
+-   [Dropzone.js](https://www.dropzonejs.com)
 
 Installation
 ------------

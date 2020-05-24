@@ -1,21 +1,22 @@
 <?php
 declare(strict_types=1);
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./system/admin.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
-    if(!defined("BLUDIT")) { die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!"); }
+    defined("BLUDIT") or die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!");
 
+    // Main Administration
     class MediaAdmin {
-        const SE_STATUS = "media-status";
-        const SE_MESSAGE = "media-message";
-        const SE_DATA = "media-data";
+        const SE_STATUS = "MEDIA-STATUS";
+        const SE_MESSAGE = "MEDIA-STATUS-MESSAGE";
+        const SE_DATA = "MEDIA-STATUS-DATA";
 
         /*
          |  CURRENT PATH
@@ -57,6 +58,7 @@ declare(strict_types=1);
                 Session::start();
             }
 
+            // Get Last Status
             if(isset($_SESSION[self::SE_STATUS]) && isset($_SESSION[self::SE_MESSAGE])) {
                 $this->status = [$_SESSION[self::SE_STATUS], $_SESSION[self::SE_MESSAGE]];
                 if(isset($_SESSION[self::SE_DATA])) {
@@ -68,7 +70,7 @@ declare(strict_types=1);
             unset($_SESSION[self::SE_DATA]);
 
             // Check if AJAX
-            $this->ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? "") === "xmlhttprequest";
+            $this->ajax = strtolower($_SERVER["HTTP_X_REQUESTED_WITH"] ?? "") === "xmlhttprequest";
         }
 
         /*
@@ -82,7 +84,7 @@ declare(strict_types=1);
          |
          |  @return string  The admin URL using the path and the query, if set.
          */
-        public function buildURL(string $path, array $query = [ ], $replace = true): string {
+        public function buildURL(string $path, array $query = [ ], bool $replace = true): string {
             if(strpos($path, "?") !== false) {
                 $path = substr($path, 0, strpos($path));
             }
@@ -98,68 +100,296 @@ declare(strict_types=1);
         }
 
         /*
-         |  METHOD :: MOVE FILEs
+         |  HANDLER :: SUBMIT
+         |  @since  0.1.0
+         |
+         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
+         */
+        public function submit(): bool {
+            global $security;
+
+            // Get GLOBAL of request
+            if(isset($_GET["media_action"])) {
+                $data = $_GET;
+            } else if(isset($_POST["media_action"])) {
+                $data = $_POST;
+            } else {
+                return $this->bye(false, bt_("The request is invalid or empty."));
+            }
+
+            // Check CSRF Token
+            if($security->validateTokenCSRF($data["nonce"] ?? $data["tokenCSRF"] ?? "") === false) {
+                return $this->bye(false, bt_("The CSRF token is invalid or missing."));
+            }
+
+            // Check Action
+            if($data["media_action"] !== $this->method || !method_exists($this, "_{$this->method}")) {
+                return $this->bye(false, bt_("The passed action is invalid or does not match."));
+            }
+
+            // Handle Request
+            return $this->{"_{$this->method}"}($data);
+        }
+
+        /*
+         |  HANDLER :: BYE
+         |  @since  0.1.0
+         |
+         |  @param  bool    TRUE if the request was success, FALSE if not.
+         |  @param  string  The status message.
+         |  @param  array   The additional data array for AJAX requests.
+         |
+         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
+         */
+        public function bye(bool $status, string $message, array $data = []) {
+            if($this->ajax) {
+                header(($status)? "HTTP/1.1 200 OK": "HTTP/1.1 400 Bad Request");
+                print(json_encode([
+                    "status"    => $status? "success": "error",
+                    "message"   => $message,
+                    "data"      => $data
+                ]));
+                die();
+            }
+
+            // Add Message
+            $_SESSION[self::SE_STATUS] = $status;
+            $_SESSION[self::SE_MESSAGE] = $message;
+            $_SESSION[self::SE_DATA] = $data;
+
+            // Prepare
+            $query = ["status" => $status? "success": "error"];
+            if(!empty($data["path"] ?? "")) {
+                $path = str_replace("\\", "/", str_replace(PAW_MEDIA_ROOT, "", $data["path"]));
+                $query["path"] = $path;
+            }
+
+            // Redirect
+            Redirect::url($this->buildURL("media", $query, true));
+            die();
+        }
+
+        /*
+         |  METHOD :: CREATE FOLDER OR FILE
+         |  @since  0.1.0
+         |
+         |  @param  array   The requested data array (use 'folder' OR 'file').
+         |                      'path'      The current base path
+         |                      'folder'    The new directory name.
+         |                      'file'      The new file name.
+         |                      'content'   The new file content.
+         |
+         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
+         */
+        protected function _create(array $data) {
+            global $media_manager;
+
+            // Check Arguments
+            if(!isset($data["path"]) || (!isset($data["folder"]) && !isset($data["file"]))) {
+                return $this->bye(false, bt_("The action was called incorrectly."));
+            }
+
+            // Check Path
+            if(($path = MediaManager::absolute($data["path"])) === null) {
+                return $this->bye(false, bt_("The passed path is invalid."));
+            }
+            $slug = MediaManager::slug($path);
+            $type = is_file($path)? bt_("file"): bt_("directory");
+            $query = ["path" => $path];
+
+            // Create
+            $content = !empty($data["folder"])? null: $data["content"] ?? "";
+            if(($status = $media_manager->create($path, $data["folder"] ?? $data["file"], $content)) !== true) {
+                return $this->bye(false, $status, $query);
+            }
+
+            // Prepare Query
+            $query["path"] = $path . DS . ($data["folder"] ?? "");
+
+            // Success
+            return $this->bye(true, bt_a("The new :type ':name' could be created.", [':type' => $type, ':name' => $data["folder"] ?? $data["file"]]), $query);
+        }
+
+        /*
+         |  METHOD :: MOVE DIRECTORY OR FILE [UNUSED]
+         |  @todo   Implement within Edit Modal
          |  @since  0.1.0
          |
          |  @param  array   The requested data array.
+         |                      'path'      The current path (with file or directory name).
+         |                      'move'      The new path (without the file or directory name).
          |
          |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
          */
         protected function _move(array $data) {
-            global $media_plugin;
-            global $media_manager;
+            global $media_history;
 
-            // Rename a Folder or File
-            if(isset($data["path"], $data["name"], $data["rename"])) {
-                if(($path = MediaManager::absolute($data["path"])) === null) {
-                    return $this->bye(false, "The passed path is invalid.");
-                }
-
-                // Prepare Query
-                $query = ["path" => MediaManager::slug($path)];
-                if(strpos($_SERVER["HTTP_REFERER"] ?? "", "&file=") !== false) {
-                    $query["file"] = $data["name"];
-                }
-
-                //@todo move this function to the MediaManager - media.php
-
-                // Check if File / Folder exists
-                if(!file_exists($path . DIRECTORY_SEPARATOR . $data["name"])) {
-                    return $this->bye(false, paw__("The requested folder or file '%s' doesn't exist.", [$data["name"]]), $query);
-                }
-
-                // Check if renamed version exists
-                if(file_exists($path . DIRECTORY_SEPARATOR . $data["rename"])) {
-                    return $this->bye(false, paw__("The new folder or file name '%s' does already exist.", [$data["rename"]]), $query);
-                }
-
-                // Check File Extension
-                [$old, $new] = [substr($data["name"], strrpos($data["name"], ".")), substr($data["rename"], strrpos($data["rename"], "."))];
-                if(($data["force"] ?? "0") !== "1" && strtolower($old) !== strtolower($new)) {
-                    return $this->bye(false, paw__("The file extension '%s' must not be changed.", [$old]), $query);
-                }
-
-                // Change Favorite
-                if(method_exists($this, "isFavorite") && $this->isFavorite($data["name"])) {
-                    $this->setFavorite($data["name"]);
-                    $this->setFavorite($data["rename"]);
-                }
-
-                // Try to rename
-                if(!@rename($path . DIRECTORY_SEPARATOR . $data["name"], $path . DIRECTORY_SEPARATOR . $data["rename"])) {
-                    return $this->bye(false, paw__("The folder for file '%s' could not be renamed.", [$data["name"]]), $query);
-                }
-
-                // Success
-                if(is_file($path . DIRECTORY_SEPARATOR . $data["rename"])) {
-                    $query["file"] = $data["rename"];
-                    $query["content"] = $this->renderFile($path . DIRECTORY_SEPARATOR . $data["rename"]);
-                }
-                return $this->bye(true, paw__("The folder for file could be successfully renamed."), $query);
+            // Check Arguments
+            if(!isset($data["path"]) || !isset($data["move"])) {
+                return $this->bye(false, bt_("The action was called incorrectly."));
             }
 
-            // Error
-            return $this->bye(false, paw__("The action was called incorrectly."));
+            // Check Path
+            if(($path = MediaManager::absolute($data["path"])) === null) {
+                return $this->bye(false, bt_("The passed path is invalid."));
+            }
+            $slug = MediaManager::slug($path);
+            $type = is_file($path)? bt_("file"): bt_("directory");
+
+            // Check Arguments
+            if(($move = MediaManager::absolute($data["move"])) === null) {
+                return $this->bye(false, bt_("The passed path is invalid."));
+            }
+            if(file_exists($move . DS . basename($path))) {
+                return $this->bye(false, bt_a("The new location already contains ':name'.", [':name' => basename($path)]));
+            }
+            $path_new = $move . DS . basename($path);
+
+            // Move File or Directory
+            if(!Filesystem::mv($path, $path_new)) {
+                return $this->bye(false, bt_a("The :type could not be moved.", [":type" => $type]));
+            }
+            if(file_exists($path_new)) {
+                $media_history->log("rename", $slug, MediaManager::slug($path_new));
+            }
+
+            // [PLUS] Handle Favourites
+            if(method_exists($this, "updateFavorites")) {
+                $this->updateFavorites($slug, MediaManager::slug($path_new));
+            }
+
+            // Prepare Query
+            $query = ["path" => $move];
+            if(is_file($path) && strpos($_SERVER["HTTP_REFERER"] ?? "", basename($path)) !== false) {
+                $query["path"] .= DS . basename($path);
+                $query["file"] = basename($path);
+
+                if($this->ajax) {
+                    $query["content"] = $this->renderFile($path_new);
+                }
+            }
+
+            // Return on Success
+            return $this->bye(true, bt_a("The :type could be successfully moved.", [":type" => $type]), $query);
+        }
+
+        /*
+         |  METHOD :: RENAME DIRECTORY OR FILE
+         |  @since  0.2.0
+         |
+         |  @param  array   The requested data array.
+         |                      'path'      The current path (with file or directory name).
+         |                      'rename'    The new directory or file name.
+         |
+         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
+         */
+        protected function _rename(array $data) {
+            global $media_history;
+
+            // Check Arguments
+            if(!isset($data["path"]) || !isset($data["rename"])) {
+                return $this->bye(false, bt_("The action was called incorrectly."));
+            }
+
+            // Check Path
+            if(($path = MediaManager::absolute($data["path"])) === null) {
+                return $this->bye(false, bt_("The passed path is invalid."));
+            }
+            $slug = MediaManager::slug($path);
+            $type = is_file($path)? bt_("file"): bt_("directory");
+            $query = ["path" => dirname($path)];
+
+            // Check Arguments
+            if(strpbrk($data["rename"], "\\/?%*:|\"<>") !== false) {
+                return $this->bye(false, bt_("The passed new name is invalid."), $query);
+            }
+            if(file_exists(dirname($path) . DS . $data["rename"])) {
+
+                // The Windows File System works completely case-insensitive, so we need to
+                // check the realpath again (ex.: User wants to just change the letter cases).
+                if(strcmp(realpath(dirname($path) . DS . $data["rename"]), dirname($path) . DS . $data["rename"]) === 0) {
+                    return $this->bye(false, bt_a("The new name ':name' does already exist.", [':name' => basename($path)]), $query);
+                }
+            }
+            $path_new = dirname($path) . DS . $data["rename"];
+
+            // Rename File or Directory
+            if(!Filesystem::mv($path, $path_new)) {
+                return $this->bye(false, bt_a("The :type could not be renamed.", [":type" => $type]), $query);
+            }
+            if(file_exists($path_new)) {
+                $media_history->log("rename", $slug, MediaManager::slug($path_new));
+            }
+
+            // [PLUS] Handle Favourites
+            if(method_exists($this, "updateFavorites")) {
+                $this->updateFavorites($slug, MediaManager::slug($path_new));
+            }
+
+            // Prepare Query
+            $query = ["path" => dirname($path_new)];
+            if(is_file($path_new) && strpos($_SERVER["HTTP_REFERER"] ?? "", basename($path)) !== false) {
+                $query["path"] .= DS . basename($path_new);
+                $query["file"] = basename($path_new);
+
+                if($this->ajax) {
+                    $query["content"] = $this->renderFile($path_new);
+                }
+            }
+
+            // Return on Success
+            return $this->bye(true, bt_a("The :type could be successfully renamed.", [":type" => $type]), $query);
+        }
+
+        /*
+         |  METHOD :: DELETE FILEs
+         |  @since  0.1.0
+         |
+         |  @param  array   The requested data array.
+         |                      'path'      The current path (with file or directory name).
+         |                      'recursive' Remove a folder recursive (if it is not empty).
+         |
+         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
+         */
+        protected function _delete(array $data) {
+            global $media_manager;
+
+            // Check Arguments
+            if(!isset($data["path"])) {
+                return $this->bye(false, bt_("The action was called incorrectly."));
+            }
+
+            // Check Path
+            if(($path = MediaManager::absolute($data["path"])) === null) {
+                return $this->bye(false, bt_("The passed path is invalid."));
+            }
+            $slug = MediaManager::slug($path);
+            $type = is_file($path)? bt_("file"): bt_("directory");
+
+            // Check Root
+            $root = str_replace(PATH_UPLOADS, "", $path);
+            if(in_array($root, ["media", "pages", "profiles", "thumbnails"])) {
+                return $this->bye(false, bt_("You cannot remove a system folder."));
+            }
+
+            // Prepare Query
+            $query = ["path" => dirname($path)];
+            if(is_file($path)) {
+                $query["file"] = basename($path);
+            }
+
+            // Delete Path
+            if(($status = $media_manager->delete($path, ($data["recursive"] ?? "0") === "1")) !== true) {
+                return $this->bye(false, $status, $query);
+            }
+
+            // [PLUS] Handle Favourites
+            if(method_exists($this, "updateFavorites")) {
+                $this->updateFavorites($slug, null);
+            }
+
+            // Success
+            return $this->bye(true, bt_a("The :type ':name' could be successfully deleted.", [':type' => $type, ':name' => basename($path)]), $query);
         }
 
         /*
@@ -167,39 +397,43 @@ declare(strict_types=1);
          |  @since  0.1.0
          |
          |  @param  array   The requested data array.
+         |                      'path'      The base path, where the files should be uploaded.
+         |                      'revision'  True if the upload is a revision.
+         |                      'overwrite' True to overwrite the existing files.
          |
          |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
          */
         protected function _upload(array $data) {
             global $media_plugin;
             global $media_manager;
+            global $media_history;
 
             // Check Files
-            if(empty($_FILES["media"])) {
-                return $this->bye(false, paw__("The upload request is invalid or empty."));
+            if(empty($_FILES["media"]) || !isset($data["path"])) {
+                return $this->bye(false, bt_("The upload request is invalid or empty."));
             }
 
-            // Check Path
-            if(empty($data["path"] ?? "") && !$media_plugin->getValue("allow_root_upload")) {
-                return $this->bye(false, paw__("You cannot upload files to the root directory."));
-            }
-
-            // Create Path
-            $path = $data["path"] ?? "";
-            if(strpos($path, "?create") !== false) {
-                $path = explode("?", $path)[0];
-                $base = MediaManager::absolute(dirname($path)) . DS . basename($path);
-
-                if(!Filesystem::directoryExists($base)) {
-                    Filesystem::mkdir($base, true);
+            // Create / Check Path
+            if(strpos($data["path"], "?create") !== false) {
+                $data["path"] = explode("?", $path)[0];
+                if(($path = MediaManager::absolute(dirname($data["path"]))) === null) {
+                    return $this->bye(false, bt_("The passed path is invalid."));
+                }
+                if(!Filesystem::directoryExists($path . DS . basename($data["path"]))) {
+                    Filesystem::mkdir($path . DS . basename($data["path"]));
+                    $path = $path . DS . basename($data["path"]);
+                }
+            } else {
+                if(($path = MediaManager::absolute($data["path"])) === null) {
+                    return $this->bye(false, bt_("The passed path is invalid."));
                 }
             }
 
-            // Validate Path
-            $path = realpath(PATH_UPLOADS_PAGES . $path);
-            if(!$path || strpos($path, realpath(PATH_UPLOADS_PAGES)) === false) {
-                return $this->bye(false, paw__("The passed path is invalid."));
+            // Check Root
+            if($path === PAW_MEDIA_ROOT && !$media_plugin->getValue("allow_root_upload")) {
+                return $this->bye(false, bt_("You cannot upload files to the root directory."));
             }
+            $slug = MediaManager::slug($path);
 
             // Set Data
             $files = $_FILES["media"];
@@ -227,176 +461,43 @@ declare(strict_types=1);
                 $status = $media_manager->upload($path, [$name, $type, $tmp, $error, $size], $overwrite, $revision);
                 if($status !== true) {
                     $errors[] = $status;
-                } else {
-                    $content[$media_manager->lastFile[0]] = $this->renderItem($media_manager->lastFile[3]);
+                    continue;
+                }
+
+                // Success
+                if(file_exists($path . DS . $name) && $overwrite) {
+                    if($revision) {
+                        $media_history->log("revise", MediaManager::slug($path . DS . $name), MediaManager::slug($path . DS . $media_manager->lastRevise));
+                        $media_history->log("revised", MediaManager::slug($path . DS . $media_manager->lastRevise), MediaManager::slug($path . DS . $name));
+                    } else {
+                        $media_history->log("revise", MediaManager::slug($path . DS . $name), null);
+                    }
                 }
             }
 
             // Return Success
             if(empty($errors)) {
                 $query = [
-                    "items" => $content,
-                    "path"  => MediaManager::slug($path),
-                    "file"  => $name
+                    "path"  => $path
                 ];
+                if(strpos($_SERVER["HTTP_REFERER"], $data["name"] ?? "") !== false) {
+                    $query["path"] .= DS . $data["name"];
+                }
+
 
                 if($count === 1) {
-                    return $this->bye(true, paw__("The upload was successfully."), $query);
+                    return $this->bye(true, bt_("The upload was successfully."), $query);
                 }
-                return $this->bye(true, paw("The upload of all %d files was successfully.", [$count]), $query);
+                return $this->bye(true, bt_a("The upload of all :num files was successfully.", [':num' => $count]), $query);
             }
 
             // Return Error
             if($count === 1) {
-                return $this->bye(false, paw__("The file could not be uploaded successfully."), ["errors" => $errors]);
+                return $this->bye(false, bt_("The file could not be uploaded successfully."), ["errors" => $errors]);
             } else if($count === count($errors)) {
-                return $this->bye(false, paw__("No single file could be uploaded successfully."), ["errors" => $errors]);
+                return $this->bye(false, bt_("No single file could be uploaded successfully."), ["errors" => $errors]);
             }
-            return $this->bye(false, paw__("Not all files could be uploaded successfully."), ["errors" => $errors]);
-        }
-
-        /*
-         |  METHOD :: CREATE FILEs
-         |  @since  0.1.0
-         |
-         |  @param  array   The requested data array.
-         |
-         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
-         */
-        protected function _create(array $data) {
-            global $media_manager;
-
-            // Validate Path
-            $path = realpath(PATH_UPLOADS_PAGES . ($data["path"] ?? "<!>)"));
-            if(!$path || strpos($path, realpath(PATH_UPLOADS_PAGES)) === false) {
-                return $this->bye(false, paw__("The passed path is invalid."));
-            }
-
-            // Create Directory
-            if(!empty($data["folder"] ?? "")) {
-                if(($status = $media_manager->createDir($path, $data["folder"])) !== true) {
-                    return $this->bye(false, $status);
-                }
-
-                $base = str_replace(PATH_UPLOADS_PAGES, "", $path . DIRECTORY_SEPARATOR . $data["folder"]);
-                $query = [
-                    "path" => str_replace("\\", "/", $base),
-                    "items" => [
-                        "$base" => $this->renderItem($path . DIRECTORY_SEPARATOR . $data["folder"])
-                    ]
-                ];
-                return $this->bye(true, paw__("The new folder '%s' could be created.", [$_POST['folder']]), $query);
-            }
-
-            // Create File
-            if(!empty($data["file"] ?? "")) {
-                if(($status = $media_manager->createFile($path, $data["file"], $data["file-content"] ?? "")) !== true) {
-                    return $this->bye(false, $status);
-                }
-                //@todo Path to new file
-                return $this->bye(true, paw__("The new file '%s' could be created.", [$data["file"]]));
-            }
-
-            // Error
-            return $this->bye(false, paw__("The action was called incorrectly."));
-        }
-
-        /*
-         |  METHOD :: UPDATE FILEs
-         |  @since  0.1.0
-         |
-         |  @param  array   The requested data array.
-         |
-         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
-         */
-        protected function _update(array $data) {
-
-        }
-
-        /*
-         |  METHOD :: DELETE FILEs
-         |  @since  0.1.0
-         |
-         |  @param  array   The requested data array.
-         |
-         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
-         */
-        protected function _delete(array $data) {
-            global $media_manager;
-
-            // Set Data
-            $rebase = "";
-            $errors = [];
-            $recursive = ($data["recursive"] ?? "0") === "1";
-
-            // Delete Directories
-            $folders = $data["folders"] ?? $data["folder"] ?? "";
-            if(!empty($folders)) {
-                $folders = !is_array($folders)? [$folders]: $folders;
-                foreach($folders AS &$dir) {
-                    if(method_exists($this, "isFavorite") && $this->isFavorite($dir)) {
-                        $this->setFavorite($dir);
-                    }
-                    $dir2 = MediaManager::slug($dir);
-
-                    // Handle
-                    if(($status = $media_manager->deleteDir($dir, $recursive)) !== true) {
-                        $errors[] = $status;
-                    } else if(empty($rebase)) {
-                        $rebase = dirname($dir);
-                    }
-                    $dir = $dir2;
-                }
-                $type = ["folder", "folders"];
-            }
-
-            // Delete Files
-            $files = $data["files"] ?? $data["file"] ?? "";
-            if(!empty($files)) {
-                $files = !is_array($files)? [$files]: $files;
-                foreach($files AS &$file) {
-                    if(method_exists($this, "isFavorite") && $this->isFavorite($file)) {
-                        $this->setFavorite($file);
-                    }
-                    $file2 = MediaManager::slug($file);
-
-                    // Handle
-                    if(($status = $media_manager->deleteFile($file)) !== true) {
-                        $errors[] = $status;
-                    } else if(empty($rebase)) {
-                        $rebase = dirname($file);
-                    }
-                    $file = $file2;
-                }
-                $type = ["file", "files"];
-            }
-
-            // No Action applied
-            if(!isset($type)) {
-                return $this->bye(false, paw__("The action was called incorrectly."));
-            }
-
-            // Return Single
-            if(empty($errors)) {
-                if(count(${$type[1]}) > 1) {
-                    return $this->bye(true, paw__("The %s could be successfullfy deleted.", [$type[1]]), [
-                        "path"  => $rebase,
-                        "type"  => $type[0],
-                        "items" => ${$type[1]}
-                    ]);
-                }
-                return $this->bye(true, paw__("The %s could be successfullfy deleted.", [$type[0]]), [
-                    "path"  => $rebase,
-                    "type"  => $type[0],
-                    "items" => ${$type[1]}
-                ]);
-            }
-
-            // Return Multiple
-            if(count($errors) === count(${$type[1]})) {
-                return $this->bye(false, paw__("No single %s could be deleted", [$type[0]]), ["errors" => $errors]);
-            }
-            return $this->bye(false, paw__("One or more %s could not be deleted", [$type[1]]), ["errors" => $errors]);
+            return $this->bye(false, bt_("Not all files could be uploaded successfully."), ["errors" => $errors]);
         }
 
         /*
@@ -412,7 +513,7 @@ declare(strict_types=1);
 
             // Check if Ajax
             if(!$this->ajax) {
-                return $this->bye(false, paw__("The action was called incorrectly."));
+                return $this->bye(false, bt_("The action was called incorrectly."));
             }
 
             // Validate Path
@@ -425,94 +526,21 @@ declare(strict_types=1);
                     $base = rtrim(MediaManager::slug($base), "/") . "/" . basename($data["path"]);
                     $base .= "?create=true";
                     $content = $this->renderList([], $base);
-                    return $this->bye(true, paw__("The path is valid."), ["content" => $content, "path" => $base]);
+                    return $this->bye(true, bt_("The path is valid."), ["content" => $content, "path" => $base]);
                 }
-                return $this->bye(false, paw__("The passed path is invalid."));
+                return $this->bye(false, bt_("The passed path is invalid."));
             }
             $base = MediaManager::slug($path);
 
             // Render File
-            if(isset($data["file"]) && file_exists($path . DIRECTORY_SEPARATOR . $data["file"])) {
-                $content = $this->renderFile($path . DIRECTORY_SEPARATOR . $data["file"]);
-                return $this->bye(true, paw__("The file is valid."), ["content" => $content, "path" => $base, "file" => $data["file"]]);
+            if(is_file($path)) {
+                $content = $this->renderFile($path);
+                return $this->bye(true, bt_("The file is valid."), ["content" => $content, "path" => $base, "file" => basename($path)]);
             }
 
-            // Render
+            // Render Directory
             $content = $this->renderList($media_manager->list($base), $base);
-            return $this->bye(true, paw__("The path is valid."), ["content" => $content, "path" => $base]);
-        }
-
-        /*
-         |  HANDLER :: SUBMIT
-         |  @since  0.1.0
-         |
-         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
-         */
-        public function submit(): bool {
-            global $security;
-
-            // Get GLOBAL of request
-            if(isset($_GET["media_action"])) {
-                $data = $_GET;
-            } else if($_POST["media_action"]) {
-                $data = $_POST;
-            } else {
-                return $this->bye(false, paw__("The request is invalid or empty."));
-            }
-
-            // Check CSRF Token
-            if($security->validateTokenCSRF($data["nonce"] ?? $data["tokenCSRF"] ?? "") === false) {
-                return $this->bye(false, paw__("The CSRF token is invalid or missing."));
-            }
-
-            // Check Action
-            if($data["media_action"] !== $this->method || !method_exists($this, "_" . $this->method)) {
-                return $this->bye(false, paw__("The passed action is invalid or does not match."));
-            }
-
-            // Handle Request
-            return $this->{"_" . $this->method}($data);
-        }
-
-        /*
-         |  HANDLER :: BYE
-         |  @since  0.1.0
-         |
-         |  @param  bool    TRUE if the request was success, FALSE if not.
-         |  @param  string  The status message.
-         |  @param  array   The additional data array for AJAX requests.
-         |
-         |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
-         */
-        public function bye(bool $status, string $message, array $data = []) {
-            if($this->ajax) {
-                header(($status)? "HTTP/1.1 200 OK": "HTTP/1.1 400 Bad Request");
-                print(json_encode([
-                    "status"    => $status? "success": "error",
-                    "message"   => $message,
-                    "data"      => $data
-                ]));
-                die();
-            }
-
-            // Add Message
-            $_SESSION["media-status"] = $status;
-            $_SESSION["media-message"] = $message;
-            $_SESSION["media-data"] = $data;
-
-            // Prepare
-            $query = ["status" => $status? "success": "error"];
-            if(!empty($data["path"] ?? "")) {
-                $path = str_replace("\\", "/", str_replace(PATH_UPLOADS_PAGES, "", $data["path"]));
-                $query["path"] = $path;
-            }
-            if(!empty($data["file"] ?? "")) {
-                $query["file"] = basename($data["file"]);
-            }
-
-            // Redirect
-            Redirect::url($this->buildURL("media", $query, true));
-            die();
+            return $this->bye(true, bt_("The path is valid."), ["content" => $content, "path" => $base]);
         }
 
         /*
@@ -531,6 +559,12 @@ declare(strict_types=1);
             // Layout Path
             $layouts = PAW_MEDIA_PATH . DS . "system" . DS . "layouts" . DS;
 
+            // Prepare Pathdata
+            if(($pathinfo = MediaManager::pathinfo($path)) === null) {
+                return "";
+            }
+            extract($pathinfo);
+
             // Render Item
             ob_start();
             if($media_plugin->getValue("layout") === "table") {
@@ -538,7 +572,7 @@ declare(strict_types=1);
             } else if($media_plugin->getValue("layout") === "grid") {
                 require $layouts . "grid.php";
             } else {
-                echo paw_e("Layout HTML File could not be found!");
+                echo bt_e("Layout HTML File could not be found!");
             }
 
             // Return
@@ -551,76 +585,69 @@ declare(strict_types=1);
          |  RENDER :: LIST ITEM
          |  @since  0.1.0
          |
-         |  @param  string  The path and filename to render.
-         |  @param  string  The real path and filename, if file is a link.
+         |  @param  string  The real path and filename to render.
+         |  @param  string  The basename of the folder or filename.
          |  @param  bool    TRUE to use the file template to render, FALSE to do it not.
          |
          |  @return string  The rendered list item content.
          */
-        public function renderItem(string $file, ?string $real = null, bool $render_file = false): string {
-            global $url;
+        public function renderItem(string $real, ?string $basename = null, bool $render_file = false): string {
             global $security;
             global $media_plugin;
             global $media_manager;
+            global $media_history;
 
-            $real = $real ?? $file;
-
-            // Layout Path
-            $layouts = PAW_MEDIA_PATH . DS . "system" . DS . "layouts" . DS;
-
-            // Prepare Base Values
-            $path = str_replace(PATH_UPLOADS_PAGES, "", $real);
-            $type = is_file($file)? "file": "folder";
-            $dirname = ($type === "file")? dirname($path): $path;
-            $basename = basename($real);
-            $slug = str_replace("\\", "/", $path);
-            $source = DOMAIN_UPLOADS_PAGES . $slug;
-
-            // Prepare File Values
-            if(is_file($file)) {
-                $file_mime = mime_content_type($file);
-                $file_type = explode("/", $file_mime)[0];
-                $file_ext = substr($file, strrpos($file, "."));
-            } else {
-                $file_mime = "folder";
-                $file_type = "folder";
-                $file_ext = "";
+            // Prepare Pathdata
+            if(($pathinfo = MediaManager::pathinfo($real)) === null) {
+                return "";
             }
+            extract($pathinfo);
+
+            // Prepare Values
+            $file_mime = $type === "folder"? "folder": mime_content_type($real);
+            $file_type = $type === "folder"? "folder": explode("/", $file_mime)[0];
 
             // Prepare Links
-            $folder = $this->buildURL("media",[
-                "path" => str_replace("\\", "/", $dirname)
-            ]);
-            $details = $this->buildURL("media", [
-                "path" => str_replace("\\", "/", $dirname),
-                "file" => $basename
+            $open = $this->buildURL("media", [
+                "path" => $slug
             ]);
             $delete = $this->buildURL("media/delete", [
                 "nonce"         => $security->getTokenCSRF(),
                 "media_action"  => "delete",
-                "$type"         => $path
+                "path"          => $slug
             ]);
+            if(PAW_MEDIA_PLUS) {
+                $edit = $this->buildURL("media", [
+                    "path"          => $slug,
+                    "edit"          => "true"
+                ]);
+                $favorite = $this->buildURL("media/favorite", [
+                    "nonce"         => $security->getTokenCSRF(),
+                    "media_action"  => "favorite",
+                    "path"          => $slug
+                ]);
+            }
 
             // Set Data
             switch($file_type) {
                 case "folder":
                     $icon = "fa fa-folder-o";
-                    $text = paw__("Folder");
+                    $text = bt_("Folder");
                     $color = "bg-secondary";
                     break;
                 case "video":
                     $icon = "fa fa-file-video-o";
-                    $text = paw__("Video");
+                    $text = bt_("Video");
                     $color = "bg-success";
                     break;
                 case "audio":
                     $icon = "fa fa-file-audio-o";
-                    $text = paw__("Audio");
+                    $text = bt_("Audio");
                     $color = "bg-warning";
                     break;
                 case "image":
                     $icon = "fa fa-file-image-o";
-                    $text = paw__("Image");
+                    $text = bt_("Image");
                     $color = "bg-danger";
                     break;
                 case "text":
@@ -629,18 +656,21 @@ declare(strict_types=1);
                         $mimes["text/css"], $mimes["text/html"], $mimes["text/xml"], $mimes["application/xhtml+xml"],
                         $mimes["text/javascript"], $mimes["text/typescript"], $mimes["application/json"], $mimes["text/x-php"]
                     );
-                    $icon = (in_array($file_ext, $codes))? "fa fa-file-code-o": "fa fa-file-text-o";
-                    $text = (in_array($file_ext, $codes))? paw__("Code"): paw__("Text");
-                    $color = (in_array($file_ext, $codes))? "bg-info": "bg-primary";
+                    $icon = (in_array($extension, $codes))? "fa fa-file-code-o": "fa fa-file-text-o";
+                    $text = (in_array($extension, $codes))? bt_("Code"): bt_("Text");
+                    $color = (in_array($extension, $codes))? "bg-info": "bg-primary";
 
                     break;
                 default:
                     $archives = [".bz", ".bz2", ".gz", ".rar", ".tar", ".zip", ".7z"];
-                    $icon = (in_array($file_ext, $archives))? "fa fa-file-archive-o": "fa fa-file-o";
-                    $text = (in_array($file_ext, $archives))? paw__("Archive"): paw__("File");
-                    $color = (in_array($file_ext, $archives))? "bg-secondary": "bg-primary";
+                    $icon = (in_array($extension, $archives))? "fa fa-file-archive-o": "fa fa-file-o";
+                    $text = (in_array($extension, $archives))? bt_("Archive"): bt_("File");
+                    $color = (in_array($extension, $archives))? "bg-secondary": "bg-primary";
                     break;
             }
+
+            // Layout Path
+            $layouts = PAW_MEDIA_PATH . DS . "system" . DS . "layouts" . DS;
 
             // Render Item
             ob_start();
@@ -652,7 +682,7 @@ declare(strict_types=1);
                 } else if($media_plugin->getValue("layout") === "grid") {
                     require $layouts . "grid-item.php";
                 } else {
-                    echo paw_e("Layout HTML File could not be found!");
+                    echo bt_e("Layout HTML File could not be found!");
                 }
             }
 

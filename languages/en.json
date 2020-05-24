@@ -1,8 +1,8 @@
 {
 	"plugin-data":
 	{
-		"name": "Media+",
-		"description": "An advanced Media & File manager, which replaces the core 'Image' popup on the content creation views too. <b>Thanks for your Support!</b>"
+		"name": "Media",
+		"description": "An advanced Media & File manager, which replaces the core 'Image' popup on the content creation views too."
 	},
     "s18n-ad2d0a1bcd91f2cf260986d593776080": "Go Back",
     "s18n-17b07089821ce823967324d1058ab7c9": "Delete File",

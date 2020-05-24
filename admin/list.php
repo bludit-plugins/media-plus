@@ -1,9 +1,9 @@
 <?php
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/list.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -27,19 +27,18 @@
 	}
 ?>
 
-<div class="media-actions row">
+<div class="media-actionbar row">
     <div class="col-sm">
         <?php if(!empty($relative) || trim($media_admin->path, "/") === "media/search") { ?>
             <?php
-				$slug = MediaManager::slug($relative);
-				if(strrpos($slug, "/") > 0) {
-					$slug = substr($slug, 0, strrpos($slug, "/"));
+				if(strpos($slug, "/") !== false) {
+					$back = substr($slug, 0, strrpos($slug, "/"));
 				} else {
-					$slug = "/";
+					$back = "";
 				}
             ?>
-            <a href="<?php echo $media_admin->buildURL("media", ["path" => $slug]); ?>" class="btn btn-success" data-media-action="back">
-				<span class="fa fa-arrow-left"></span> <?php paw_e("Go Back"); ?>
+            <a href="<?php echo $media_admin->buildURL("media", ["path" => $back]); ?>" class="btn btn-success" data-media-action="list">
+				<span class="fa fa-arrow-left"></span> <?php bt_e("Go Back"); ?>
 			</a>
         <?php } ?>
     </div>
@@ -47,22 +46,22 @@
     <div class="col-sm text-right">
         <div class="btn-group">
 			<a href="#media-create-folder" class="btn btn-light" data-toggle="modal">
-				<span class="fa fa-folder"></span> <?php paw_e("Create Folder"); ?>
+				<span class="fa fa-folder"></span> <?php bt_e("Create Folder"); ?>
 			</a>
             <button class="btn btn-light media-trigger-upload clickable">
-				<span class="fa fa-upload"></span> <?php paw_e("Upload"); ?>
+				<span class="fa fa-upload"></span> <?php bt_e("Upload"); ?>
 			</button>
         </div>
 
         <div class="btn-group">
 			<?php $href = $media_admin->buildURL("media", ["layout" => "table"], false); ?>
             <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "table"? "active": ""; ?>" data-media-action="list" data-media-layout="table">
-                <span class="fa fa-th-list"></span>
+				<svg class="media-icon"><use href="#octicon-three-bars" /></svg>
             </a>
 
 			<?php $href = $media_admin->buildURL("media", ["layout" => "grid"], false); ?>
             <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "grid"? "active": ""; ?>" data-media-action="list" data-media-layout="grid">
-                <span class="fa fa-th-large"></span>
+				<svg class="media-icon"><use href="#octicon-display-grid" /></svg>
             </a>
         </div>
     </div>
@@ -102,7 +101,7 @@
 	            }
 			} else {
 				?><li class="breadcrumb-item active"><?php
-					echo paw__("Search for: ") . '"' . Sanitize::html(strip_tags($media_admin->search)) . '"';
+					echo bt_("Search for: ") . '"' . Sanitize::html(strip_tags($media_admin->search)) . '"';
 				?></li><?php
 			}
 		?>
@@ -115,5 +114,9 @@
 </nav>
 
 <div class="media-list-upload" />
-	<?php print($media_admin->renderList($media_manager->list($relative), $relative)); ?>
+	<?php
+		$limit = $this->getValue("items_per_page");
+		$page = is_numeric($_GET["page"] ?? "!")? intval($_GET["page"]): 0;
+		print($media_admin->renderList($media_manager->list($relative, $limit, $page), $relative));
+	?>
 </div>

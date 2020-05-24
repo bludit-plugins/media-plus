@@ -1,17 +1,18 @@
 <?php
 declare(strict_types=1);
 /*
- |  Media       An advanced Media & File Manager for Bludit
+ |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./system/manager.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    0.2.0 [0.1.0] - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
-    if(!defined("BLUDIT")) { die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!"); }
+    defined("BLUDIT") or die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!");
 
+    // Main File Handler
     class MediaManager {
         const MIME_TYPES = [
             //
@@ -93,14 +94,14 @@ declare(strict_types=1);
             $path = str_replace("\\/", DS, $path);
 
             // Sanitize Path
-            if(strpos($path, rtrim(PATH_UPLOADS_PAGES, DS)) !== 0) {
-                $path = realpath(rtrim(PATH_UPLOADS_PAGES, DS) . DS . trim($path, DS));
+            if(strpos($path, PAW_MEDIA_ROOT) !== 0) {
+                $path = realpath(PAW_MEDIA_ROOT . DS . trim($path, DS));
             } else {
                 $path = realpath($path);
             }
 
             // Check Path
-            if(!$path || strpos($path, rtrim(PATH_UPLOADS_PAGES, DS)) !== 0) {
+            if(!$path || strpos($path, PAW_MEDIA_ROOT) !== 0) {
                 return null;
             }
             return $path;
@@ -118,7 +119,7 @@ declare(strict_types=1);
             if(($path = self::absolute($path)) === null) {
                 return null;
             }
-            return str_replace(rtrim(PATH_UPLOADS_PAGES, DS), "", $path);
+            return ltrim(str_replace(rtrim(PAW_MEDIA_ROOT, DS), "", $path) . DS);
         }
 
         /*
@@ -133,7 +134,7 @@ declare(strict_types=1);
             if(($path = self::relative($path)) === null) {
                 return null;
             }
-            return str_replace("\\", "/", $path);
+            return trim(str_replace("\\", "/", $path), "/");
         }
 
         /*
@@ -151,16 +152,62 @@ declare(strict_types=1);
             return rtrim(DOMAIN_UPLOADS_PAGES, "/") . "/" . $slug;
         }
 
+        /*
+         |  HELPER :: GET PATHINFO
+         |  @since  0.2.0
+         |
+         |  @param  string  The full path to the directory or file.
+         |
+         |  @return multi   An array with all important path informations, NULL on error.
+         */
+        static public function pathinfo(string $path): ?array {
+            $path = str_replace("\\/", DS, $path);
+
+            // Sanitize Path
+            if(strpos($path, PAW_MEDIA_ROOT) !== 0) {
+                $path = realpath(PAW_MEDIA_ROOT . DS . trim($path, DS));
+            } else {
+                $path = realpath($path);
+            }
+
+            // Check Path
+            if(!$path || strpos($path, PAW_MEDIA_ROOT) !== 0) {
+                return null;
+            }
+
+            // Prepare
+            $relative = ltrim(str_replace(PAW_MEDIA_ROOT, "", $path), DS);
+            $slugpath = trim(str_replace("\\", "/", $relative), "/");
+            $urlpath = DOMAIN_UPLOADS . str_replace(rtrim(PATH_UPLOADS, DS), "", PAW_MEDIA_ROOT) . $slugpath;
+
+            // Return Path
+            return [
+                "absolute"  => $path,
+                "relative"  => $relative,
+                "slug"      => $slugpath,
+                "url"       => $urlpath,
+                "type"      => is_file($path)? "file": "folder",
+                "basename"  => basename($path),
+                "dirname"   => is_file($path)? dirname($path): basename($path),
+                "extension" => is_file($path)? pathinfo($path, PATHINFO_EXTENSION): null
+            ];
+        }
+
 
         /*
          |  ROOT DIRECTORY
          */
-        public $root = PATH_UPLOADS_PAGES;
+        public $root = null;
 
         /*
          |  LAST UPLOADED FILE
          */
         public $lastFile = [];
+
+        /*
+         |  LAST REVISION FILE NAME
+         */
+        public $lastRevise = null;
 
 
         /*
@@ -168,7 +215,10 @@ declare(strict_types=1);
          |  @since  0.1.0
          */
         public function __construct() {
-            $this->root = rtrim(PATH_UPLOADS_PAGES, "/\\");
+            global $media_plugin;
+
+            $root = str_replace("root", PATH_UPLOADS, $media_plugin->getValue("root_directory"));
+            $this->root = rtrim($root, "/\\");
         }
 
         /*
@@ -299,26 +349,30 @@ declare(strict_types=1);
          */
         public function upload(string $path, array $file, bool $overwrite = false, bool $revision = false)/*: bool | string*/ {
             if(($path = self::absolute($path)) === null) {
-                return paw__("The passed path for the file is invalid.");
+                return bt_("The passed path for the file is invalid.");
             }
             [$name, $type, $tmp, $error, $size] = array_values($file);
+
+            // Reset Data
+            $this->lastFile = [];
+            $this->lastRevise = null;
 
             // Check File Error
             if($error !== UPLOAD_ERR_OK) {
                 switch($error) {
-                    case UPLOAD_ERR_INI_SIZE: ///@pass
+                    case UPLOAD_ERR_INI_SIZE:   ///@pass
                     case UPLOAD_ERR_FORM_SIZE:
-                        return paw__("The requested file '%s' exceeds the maximum size.", [$name]);
-                    case UPLOAD_ERR_PARTIAL: ///@pass
+                        return bt_a("The requested file ':name' exceeds the maximum size.", [':name' => $name]);
+                    case UPLOAD_ERR_PARTIAL:    ///@pass
                     case UPLOAD_ERR_NO_FILE:
-                        return paw__("The requested file '%s' has not (fully) uploaded.", [$name]);
+                        return bt_a("The requested file ':name' has not (fully) uploaded.", [':name' => $name]);
                     case UPLOAD_ERR_CANT_WRITE: ///@pass
                     case UPLOAD_ERR_EXTENSION:
-                        return paw__("The requested file '%s' could not be uploaded.", [$name]);
+                        return bt_a("The requested file ':name' could not be uploaded.", [':name' => $name]);
                     case UPLOAD_ERR_NO_TMP_DIR:
-                        return paw__("The requested file '%s' could not be uploaded in the temporary directory.", [$name]);
+                        return bt_a("The requested file ':name' could not be uploaded in the temporary directory.", [':name' => $name]);
                     case UPLOAD_ERR_INI_SIZE:
-                        return paw__("An unknown error occured on the requested file '%s'.", [$name]);
+                        return bt_a("An unknown error occured on the requested file ':name'.", [':name' => $name]);
                 }
             }
 
@@ -342,172 +396,97 @@ declare(strict_types=1);
 
                 // Try to Rename
                 if(!@rename($path . DS . $name, $path . DS . $temp)) {
-                    return paw__("The old version of the file '%s' could not be renamed.", [$name]);
+                    return bt_a("The old version of the file ':name' could not be renamed.", [':name' => $name]);
                 }
+                $this->lastRevise = $temp;
             }
 
             // Check File Extension
             if(!$this->checkFileType($tmp, $name)) {
-                return paw__("The requested file '%s' has an unsupported or illegal mime type or file extension.", [$name]);
+                return bt_a("The requested file ':name' has an unsupported or illegal mime type or file extension.", [':name' => $name]);
             }
 
             // Move Uploaded File
             if(!@move_uploaded_file($tmp, $path . DS . $name)) {
-                return paw__("The file upload for file '%s' failed.", [$file]);
+                return bt_a("The file upload for file ':name' failed.", [':name' => $name]);
             }
             $this->lastFile = [$name, $type, $size, $path . DS . $name];
             return true;
         }
 
         /*
-         |  HANDLE :: CREATE DIRECTORY
-         |  @since  0.1.0
+         |  HANDLE :: CREATE ITEM
+         |  @since  0.2.0
          |
-         |  @param  string  The path, where the new directory should be created.
-         |  @param  string  The new directory folder name.
+         |  @param  string  The path, where the new directory or file should be created.
+         |  @param  string  The new directory or file name.
+         |  @param  multi   The content for the new file name, use an empty string for no content
+         |                  use NULL to create a directory.
          |
          |  @return multi   TRUE if everything went fluffy or the error message as STRING.
          */
-        public function createDir(string $path, string $directory)/*: bool | string */ {
+        public function create(string $path, string $name, ?string $content = null)/*: bool | string */ {
+            $type = $content === null? bt_("file"): bt_("directory");
+
+            // Check Path
             if(($path = self::absolute($path)) === null) {
-                return paw__("The passed path for the new directory is invalid.");
+                return bt_a("The passed path for the new :type is invalid.", [':type' => $type]);
             }
 
-            // Check Directory
-            if(strpbrk($directory, "\\/?%*:|\"<>") !== false) {
-                return paw__("The passed directory name is invalid.");
+            // Check Name
+            if(strpbrk($name, "\\/?%*:|\"<>") !== false) {
+                return bt_a("The passed :type name is invalid.", [':type' => $type]);
             }
-            if(file_exists($path . DS . $directory)) {
-                return paw__("The passed directory '%s' does already exists.", [$directory]);
+            if(file_exists($path . DS . $name)) {
+                return bt_a("The passed :type ':name' does already exists.", [':type' => $type, ':name' => $name]);
             }
-            if(@mkdir($path . DS . $directory) === false) {
-                return paw__("The passed directory '%s' could not be created.", [$directory]);
+
+            // Create
+            if($content === null) {
+                if(@Filesystem::mkdir($path . DS . $name) !== false) {
+                    return true;
+                }
+            } else {
+                if(@file_put_contents($path . DS . $name, $content) !== false) {
+                    return true;
+                }
             }
-            return true;
+            return bt_a("The passed :type ':name' could not be created.", [':type' => $type, ':name' => $name]);
         }
 
         /*
-         |  HANDLE :: CREATE FILE
-         |  @since  0.1.0
-         |
-         |  @param  string  The path, where the new file should be created.
-         |  @param  string  The new file name.
-         |  @param  string  The content of the new file.
-         |
-         |  @return multi   TRUE if everything went fluffy or the error message as STRING.
-         */
-        public function createFile(string $path, string $filename, string $content = "")/*: bool | string */ {
-            if(($path = self::absolute($path)) === null) {
-                return paw__("The passed path for the new file is invalid.");
-            }
-
-            // Check File
-            if(strpbrk($filename, "\\/?%*:|\"<>") !== false) {
-                return paw("The passed filename is invalid.");
-            }
-            if(file_exists($path . DS . $filename)) {
-                return paw("The passed filename '%s' does already exists.", [$filename]);
-            }
-            if(@file_put_contents($path . DS . $filename, $content) === false) {
-                return paw("The passed filename '%s' could not be created.", [$filename]);
-            }
-            return true;
-        }
-
-        /*
-         |  HANDLE :: MOVE OR RENAME DIRECTORY
-         |  @since  0.1.0
-         |
-         |  @param  string  The old path INCLUDING the directory you want to move.
-         |  @param  string  The new path INCLDUING the directory (new or old) name.
-         |
-         |  @return multi   TRUE if everything went fluffy or the error message as STRING.
-         */
-        public function moveDir(string $old, string $new)/*: bool | string */ {
-            ///@todo Move Function from admin.php
-        }
-
-        /*
-         |  HANDLE :: MOVE OR RENAME FILE
-         |  @since  0.1.0
-         |
-         |  @param  string  The old path INCLUDING the file you want to move.
-         |  @param  string  The new path INCLDUING the file (new or old) name.
-         |
-         |  @return multi   TRUE if everything went fluffy or the error message as STRING.
-         */
-        public function moveFile(string $old, string $new)/*: bool | string */ {
-            ///@todo Move Function from admin.php
-        }
-
-        /*
-         |  HANDLE :: DELETE DIRECTORY
-         |  @since  0.1.0
+         |  HANDLE :: DELETE DIRECTORY OR FILE
+         |  @since  0.2.0
          |
          |  @param  string  The path INCLUDING the directory, which should be deleted.
          |  @param  bool    Delete the directory recursive.
          |
          |  @return multi   TRUE if everything went fluffy or the error message as STRING.
          */
-        public function deleteDir(string $path, bool $recursive = false)/*: bool | string */ {
+        public function delete(string $path, bool $recursive = false)/*: bool | string */ {
             if(($path = self::absolute($path)) === null) {
-                return paw__("The passed path for the new file is invalid.");
+                return bt_("The passed path for the folder or file is invalid.");
             }
             $base = trim(self::slug($path), "/");
 
-            // Recursive Delete
-            $delete = function($path, $func){
-                $handle = opendir($path);
-                while(($item = readdir($handle)) !== false) {
-                    if($item === "." || $item === "..") {
-                        continue;
+            // Remove Directory
+            if(is_dir($path)) {
+                if(count(scandir($path)) > 2) {
+                    if(!$recursive) {
+                        return bt_a("The passed folder ':name' is not empty.", [':name' => $base]);
                     }
-                    if(is_dir($path . DS . $item)) {
-                        if($func($path . DS . $item, $func) !== true || !@rmdir($path . DS . $item)) {
-                            return false;
-                        }
-                    } else if(@unlink($path . DS . $item)) {
-                        return false;
+                    if(!@Filesystem::deleteRecursive($path, true)) {
+                        return bt_a("The passed folder ':name' could not be emptied.", [':name' => $base]);
                     }
+                } else if(!@Filesystem::rmdir($path)) {
+                    return bt_a("The passed folder ':name' could not be deleted.", [':name' => $base]);
                 }
-                closedir($handle);
                 return true;
-            };
-
-            // Check if Empty
-            if(count(scandir($path)) > 2) {
-                if(!$recursive) {
-                    return paw__("The passed folder '%s' is not empty.", [$base]);
-                }
-                if($delete($path, $delete)) {
-                    return paw__("The passed folder '%s' could not be emptied.", [$base]);
-                }
             }
 
-            // Delete
-            if(@rmdir($path) !== true) {
-                return paw__("The passed folder '%s' could not be deleted.", [$base]);
-            }
-            return true;
-        }
-
-        /*
-         |  HANDLE :: DELETE FILE
-         |  @since  0.1.0
-         |
-         |  @param  string  The path INCLUDING the file, which should be deleted.
-         |
-         |  @return multi   TRUE if everything went fluffy or the error message as STRING.
-         */
-        public function deleteFile(string $path)/*: bool | string */ {
-            if(($path = self::absolute($path)) === null) {
-                return paw__("The passed file path is invalid.");
-            }
-            $base = self::relative($path);
-
-            // Delete
-            if(@unlink($path) !== true) {
-                return paw__("The passed file '%s' could not be deleted.", [$base]);
+            // Remove File
+            if(!@Filesystem::rmfile($path)) {
+                return bt_a("The passed file ':name' could not be deleted.", [':name' => $base]);
             }
             return true;
         }
@@ -516,11 +495,14 @@ declare(strict_types=1);
          |  HANDLE :: LIST CONTENT
          |  @since  0.1.0
          |
-         |  @param  string  The path to the directory, which should be listed.
+         |  @param  string  The path to the directory to show, null to use the root dir.
+         |  @param  int     The limit of returning items, use 0 to return everything.
+         |  @param  int     The current page number, starting with 0.
          |
          |  @return multi   The files and folders within the directory, null on failure.
          */
-        public function list(?string $path = null): ?array {
+        public function list(?string $path = null, int $limit = 0, int $page = 0): ?array {
+            global $pages;
             global $media_plugin;
 
             // Validate Path
@@ -543,24 +525,41 @@ declare(strict_types=1);
                         continue;
                     }
 
-                    // Append
-                    if(is_dir($real)) {
-                        $append = &$folders;
-                    } else {
-                        $append = &$files;
+                    // Is File
+                    if(is_file($real)) {
+                        if(!is_link($path . DS . $file)) {
+                            $files[$real] = basename($real);
+                        }
+                        continue;
                     }
 
-                    // Check for Links
-                    if(is_link($path . DS . $file)) {
-                        $append[$real] = $path . DS . $file;
-                    } else if(!array_key_exists($real, $append)) {
-                        $append[$real] = $real;
+                    // Is Directory
+                    if($media_plugin->getValue("resolve_folders") !== "symlink") {
+                        if($media_plugin->getValue("resolve_folders") === "page_title") {
+                            if(($page = $pages->getByUUID(basename($real))) !== false) {
+                                $page = $pages->getPageDB($page)["title"];
+                            }
+                        } else {
+                            $page = $pages->getByUUID(basename($real));
+                        }
+
+                        if(!empty($page)) {
+                            $folders[$real] = $page;
+                        } else {
+                            $folders[$real] = basename($real);
+                        }
+                    } else {
+                        if(is_link($path . DS . $file)) {
+                            $folders[$real] = $file;
+                        } else if(!array_key_exists($real, $folders)) {
+                            $folders[$real] = basename($real);
+                        }
                     }
                 }
             }
             closedir($handle);
 
-            // Sort & Return
+            // Sort
             if($media_plugin->getValue("items_order") == "desc") {
                 krsort($folders);
                 krsort($files);
@@ -568,6 +567,13 @@ declare(strict_types=1);
                 ksort($folders);
                 ksort($files);
             }
-            return array_merge($folders, $files);
+            $list = array_merge($folders, $files);
+
+            // Split Result to Pages
+            if($limit > 0 && $page >= 0) {
+                $chunks = array_chunk($list, $limit, true);
+                $list = count($chunks) > $page? $chunks[$page]: [ ];
+            }
+            return $list;
         }
     }

@@ -1,69 +1,134 @@
 <?php
-declare(strict_types=1);
 /*
- |  Media       An advanced Media & File Manager for Bludit
- |  @file       ./system/functions.php
+ |  BLU-TOOLS   A bunch of useful Bludit Tools 4 the Plugin Development.
+ |  @file       ./functions.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.1.1 [0.1.0] - Alpha
+ |  @version    1.0.0 [1.0.0] - Stable
  |
- |  @website    https://github.com/pytesNET/media
+ |  @website    https://github.com/pytesNET/blu-tools
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
+##
+#   S18N TRANSLATION SYSTEM
+#       1.  bt_(<string>)
+#       2.  bt_e(<string>)
+#       3.  bt_a(<string>, <array>)
+#       4.  bt_ae(<string>, <array>)
+#       5.  bt_n(<string, <string>, <int>)
+#       6.  bt_ne(<string>, <string>, <int>)
+#
+#   GENERAL HELPER FUNCTIONs
+#       1.  bt_selected(<string|bool>, <string|bool>, <bool>)
+#       2.  bt_checked(<string|bool>, <string|bool>, <bool>)
+##
 
     /*
-     |  S18N :: FORMAT AND GET STRING
-     |  @since  0.1.0
+     |  S18N :: TRANSLATE A STRING
+     |  @since  1.0.0 [1.0.0]
      |
-     |  @param  string  The respective string to translate.
-     |  @param  array   Some additional array for `printf()`.
+     |  @param  string  The desired string to translate.
      |
-     |  @return string  The translated and formated string.
+     |  @return string  The parsed, may translated, string.
      */
-    if(!function_exists("paw__")) {
-        function paw__(string $string, array $args = array()): string {
+    if(!function_exists("bt_")) {
+        function bt_(string $string): string {
             global $L;
             $hash = "s18n-" . md5(strtolower($string));
             $value = $L->g($hash);
-            if($hash === $value){
-                $value = $string;
-            }
-            return (count($args) > 0)? vsprintf($value, $args): $value;
+            return ($hash === $value)? $string: $value;
         }
     }
 
     /*
-     |  S18N :: FORMAT AND PRINT STRING
-     |  @since  0.1.0
+     |  S18N :: PRINT A TRANSLATED STRING
+     |  @since  1.0.0 [1.0.0]
      |
-     |  @param  string  The respective string to translate.
-     |  @param  array   Some additional array for `printf()`.
+     |  @param  string  The desired string to translate.
      |
-     |  @return <print>
+     |  @return void    <print>
      */
-    if(!function_exists("paw_e")) {
-        function paw_e(string $string, array $args = array()): void {
-            print(paw__($string, $args));
+    if(!function_exists("bt_e")) {
+        function bt_e(string $string): void {
+            print(bt_($string));
         }
     }
 
     /*
-     |  FORM :: GET SELECTED STRING
-     |  @since  0.1.0
+     |  S18N :: TRANSLATE AND PARSE A STRING
+     |  @since  1.0.0 [1.0.0]
      |
-     |  @param  bool    The value of the <option> field or a boolean.
-     |  @param  multi   The value to compare with.
-     |  @param  bool    TRUE to print `selected="selected"`, FALSE to return it as string.
+     |  @param  string  The desired string to translate.
+     |  @param  array   Some additional key => value paired arguments to render.
+     |
+     |  @return string  The parsed, may translated, string.
+     */
+    if(!function_exists("bt_a")) {
+        function bt_a(string $string, array $array = [ ]): string {
+            return strtr(bt_($string), $array);
+        }
+    }
+
+    /*
+     |  S18N :: PRINT A TRANSLATED AND PARSED STRING
+     |  @since  1.0.0 [1.0.0]
+     |
+     |  @param  string  The desired string to translate.
+     |  @param  array   Some additional key => value paired arguments to render.
+     |
+     |  @return void    <print>
+     */
+    if(!function_exists("bt_ae")) {
+        function bt_ae(string $string, array $array = [ ]): void {
+            print(strtr(bt_($string), $array));
+        }
+    }
+
+    /*
+     |  S18N :: TRANSLATE A SINGULAR OR PLURAL STRING
+     |  @since  1.0.0 [1.0.0]
+     |
+     |  @param  string  The desired singular string to translate.
+     |  @param  string  The desired plural string to translate.
+     |  @param  int     The respective number, which should be used for.
+     |
+     |  @return string  The parsed, may translated, string.
+     */
+    if(!function_exists("bt_n")) {
+        function bt_n(string $singular, string $plural, int $number = 1): string {
+            return bt_(($number === 1)? $singular: $plural);
+        }
+    }
+
+    /*
+     |  S18N :: PRINT A TRANSLATED OR PLURAL STRING
+     |  @since  1.0.0 [1.0.0]
+     |
+     |  @param  string  The desired singular string to translate.
+     |  @param  string  The desired plural string to translate.
+     |  @param  int     The respective number, which should be used for.
+     |
+     |  @return void    <print>
+     */
+    if(!function_exists("bt_ne")) {
+        function bt_ne(string $singular, string $plural, int $number = 1): void {
+            print(bt_(($number === 1)? $singular: $plural));
+        }
+    }
+
+    /*
+     |  HELPER :: GET SELECTED STRING
+     |  @since  1.0.0
+     |
+     |  @param  bool    The first set value.
+     |  @param  multi   The second value to compare with.
+     |  @param  bool    TRUE to print ' selected="selected"', FALSE to return it as string.
      |
      |  @return multi   The respective string or null.
      */
-    if(!function_exists("paw_selected")) {
-        function paw_selected(/* string | bool */ $field, /* string | bool */ $compare = true, bool $print = true): ?string {
-            if($field === $compare) {
-                $selected = 'selected="selected"';
-            } else {
-                $selected = '';
-            }
+    if(!function_exists("bt_selected")) {
+        function bt_selected(/* string | bool */ $field, /* string | bool */ $compare = true, bool $print = true): ?string {
+            $selected = ($field === $compare)? ' selected="selected"': '';
             if(!$print){
                 return $selected;
             }
@@ -73,22 +138,18 @@ declare(strict_types=1);
     }
 
     /*
-     |  FORM :: GET CHECKED STRING
-     |  @since  0.1.0
+     |  HELPER :: GET CHECKED STRING
+     |  @since  1.0.0
      |
-     |  @param  bool    The value of the <input /> field or a boolean.
-     |  @param  multi   The value to compare with.
-     |  @param  bool    TRUE to print `checked="checked"`, FALSE to return it as string.
+     |  @param  bool    The first set value.
+     |  @param  multi   The second value to compare with.
+     |  @param  bool    TRUE to print ' checked="checked"', FALSE to return it as string.
      |
      |  @return multi   The respective string or null.
      */
-    if(!function_exists("paw_checked")) {
-        function paw_checked(/* string | bool */ $field, /* string | bool */ $compare = true, bool $print = true): ?string {
-            if($field === $compare) {
-                $checked = 'checked="checked"';
-            } else {
-                $checked = '';
-            }
+    if(!function_exists("bt_checked")) {
+        function bt_checked(/* string | bool */ $field, /* string | bool */ $compare = true, bool $print = true): ?string {
+            $checked = ($field === $compare)? ' checked="checked"': '';
             if(!$print){
                 return $checked;
             }
