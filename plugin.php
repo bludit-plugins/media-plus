@@ -332,18 +332,18 @@ declare(strict_types=1);
                 <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/css/media.min.css?ver=<?php echo self::VERSION; ?>"></link>
 
                 <?php if(PAW_MEDIA_PLUS) { ?>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-javascript.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-yaml.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-xml.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-htmlmixed.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-css.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-sass.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-php.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-markdown.js?ver=5.53.2"></script>
-                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-textile.js?ver=5.53.2"></script>
-                    <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror.css?ver=5.53.2"></link>
-                    <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-neo.css?ver=5.53.2"></link>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-javascript.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-yaml.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-xml.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-htmlmixed.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-css.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-sass.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-php.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-markdown.min.js?ver=5.53.2"></script>
+                    <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-textile.min.js?ver=5.53.2"></script>
+                    <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror.min.css?ver=5.53.2"></link>
+                    <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/codemirror/codemirror-neo.min.css?ver=5.53.2"></link>
                 <?php } ?>
             <?php
             $content = ob_get_contents();
