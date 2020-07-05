@@ -17,6 +17,7 @@
 #       4.  bt_ae(<string>, <array>)
 #       5.  bt_n(<string, <string>, <int>)
 #       6.  bt_ne(<string>, <string>, <int>)
+#       7.  bt_fetch(<string>, <string>)
 #
 #   GENERAL HELPER FUNCTIONs
 #       1.  bt_selected(<string|bool>, <string|bool>, <bool>)
@@ -113,6 +114,102 @@
     if(!function_exists("bt_ne")) {
         function bt_ne(string $singular, string $plural, int $number = 1): void {
             print(bt_(($number === 1)? $singular: $plural));
+        }
+    }
+
+    /*
+     |  S18N :: FETCH TRANSLATIONs
+     |  @since  1.0.0 [1.0.0]
+     |
+     |  @param  string  The path to the plugin folder to fetch.
+     |
+     |  @return bool    TRUE if everything is fluffy, FALSE if not.
+     */
+    if(!function_exists("bt_fetch")) {
+        function bt_fetch(string $base, string $dir = ""): bool {
+            static $translations = [];
+
+            // Fett Full Path
+            $fullpath = rtrim($base, DS) . $dir;
+
+            // Fetch Strings
+            if(is_file($fullpath)) {
+                if(strpos($fullpath, ".php") !== strlen($fullpath) - 4 || $fullpath === __FILE__) {
+                    return false;
+                }
+
+                $content = explode("\n", file_get_contents($fullpath));
+                foreach($content AS $line) {
+                    preg_match_all('/bt(?:_|_e|_a|_ae|_n|_ne)\s*\(\s*([\'"])(.+?)\1(?:\s*,\s*([\'"])(.+?)\3)?/', $line, $matches, PREG_SET_ORDER);
+                    if(empty($matches)) {
+                        continue;
+                    }
+
+                    foreach($matches AS $match) {
+                        if(count($match) < 2) {
+                            continue;
+                        }
+
+                        [$key, $string] = ["s18n-" . md5(strtolower(trim($match[2]))), trim($match[2])];
+                        if(strlen($string) > 0 && !isset($translations[$key])) {
+                            $translations[$key] = $string;
+                        }
+
+                        // Plural Strings (as used on bt_n and bt_ne)
+                        if(count($match) === 5) {
+                            [$key, $string] = ["s18n-" . md5(strtolower(trim($match[4]))), trim($match[4])];
+                            if(strlen($string) > 0 && !isset($translations[$key])) {
+                                $translations[$key] = $string;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            // Recursive Walker
+            if(is_dir($fullpath)) {
+                if($handle = opendir($fullpath)) {
+                    while(($file = readdir($handle)) !== false) {
+                        if(in_array($file, [".", "..", "languages"])) {
+                            continue;
+                        }
+                        bt_fetch($base, $dir . DS . $file);
+                    }
+                    closedir($handle);
+                }
+                if(!empty($dir)) {
+                    return true;
+                }
+            }
+
+            // Write Translation Strings
+            $langpath = rtrim($base) . DS . "languages" . DS;
+            if($handle = opendir($langpath)) {
+                while(($file = readdir($handle)) !== false) {
+                    if(in_array($file, [".", ".."])) {
+                        continue;
+                    }
+                    if(is_dir($langpath . $file) || strpos($file, ".json") !== strlen($file) - 5) {
+                        continue;
+                    }
+
+                    $content = file_get_contents($langpath . $file);
+                    $content = json_decode($content, true);
+
+                    foreach($translations AS $key => $value) {
+                        if(array_key_exists($key, $content)) {
+                            continue;
+                        }
+                        $content[$key] = $value;
+                    }
+
+                    $content = json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                    file_put_contents($langpath . $file, $content);
+                }
+                closedir($handle);
+            }
+            return true;
         }
     }
 

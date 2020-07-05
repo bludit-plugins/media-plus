@@ -23,13 +23,14 @@
                 <form id="media-create-folder-form" method="post" action="<?php echo $media_admin->buildURL("media/create", [], true); ?>" data-media-form="create">
                     <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                    <input type="hidden" name="path" value="<?php echo MediaManager::slug($relative); ?>" />
-                    <input type="hidden" name="media_action" value="rename" />
+                    <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
+                    <input type="hidden" name="type" value="folder" />
+                    <input type="hidden" name="action" value="create" />
 
                     <div class="input-group">
-                        <input type="text" class="form-control" name="folder" value="" placeholder="<?php bt_e("Folder Name"); ?>" />
+                        <input type="text" class="form-control" name="item" value="" placeholder="<?php bt_e("Folder Name"); ?>" />
                         <div class="input-group-append">
-                            <button name="media_action" value="create" class="btn btn-primary"><?php bt_e("Create"); ?></button>
+                            <button name="action" value="create" class="btn btn-primary"><?php bt_e("Create"); ?></button>
                         </div>
                     </div>
                 </form>

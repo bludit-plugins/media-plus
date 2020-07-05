@@ -91,6 +91,6 @@ declare(strict_types=1);
             if(empty($search)) {
                 return parent::list($path, $limit, $page);
             }
-            return $this->search($search, $folder);
+            return $this->search($search, $path);
         }
     }

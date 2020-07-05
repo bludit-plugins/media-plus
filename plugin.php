@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
     defined("BLUDIT") or die("Go directly to Jail. Do not pass Go. Do not collect 200 Cookies!");
 
+
     // Load Helper Functions
     require_once "system" . DS . "functions.php";
 
@@ -54,23 +55,102 @@ declare(strict_types=1);
         /*
          |  PLUGIN :: INIT
          |  @since  0.1.0
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
          */
         public function init(): bool {
             $this->dbFields = [
                 "version"           => self::VERSION,   // Installed version
-                "layout"            => "table",         // Media Manager Layout ("table" or "grid")
-                "items_order"       => "ASC",           // *Items Order (ASC || DESC)
-                "items_per_page"    => 0,               // *Items per Page (0 = all)
-                "allow_html_upload" => true,            // Allow HTML upload
-                "allow_php_upload"  => false,           // Allow PHP upload
-                "allow_js_upload"   => false,           // Allow JavaScript upload
-                "allow_root_upload" => false,           // Allow File-Upload on Root
-                "enable_ajax_page"  => false,           // Enable AJAX on Media Admin Page
-                "custom_mime_types" => [ ],             // Custom MIME Types with file extensions
-                "root_directory"    => "root",          // Default root directory
-                "resolve_folders"   => "symlink",       // Resolve temporary page folders
+
+                // Core Settings
+                "allowed_admin_roles"   => "",          // Allowed Roles for the custom admin page
+                "allowed_modal_roles"   => "",          // Allowed Roles for the content modal
+                "allow_html_upload"     => true,        // Allow HTML upload
+                "allow_php_upload"      => false,       // Allow PHP upload
+                "allow_js_upload"       => false,       // Allow JavaScript upload
+                "allow_root_upload"     => false,       // Allow File-Upload on Root
+                "custom_mime_types"     => [ ],         // Custom MIME Types with file extensions
+
+                // Advanced Settings
+                "resolve_folders"       => "symlink",   // Resolve temporary page folders
+                "root_directory"        => "root",      // Default root directory
+                "enable_ajax_page"      => false,       // Enable AJAX on Media Admin Page
+
+                // Default Settings
+                "layout"                => "table",     // Media Manager Layout ("table" or "grid")
+                "items_order"           => "ASC",       // *Items Order (ASC || DESC)
+                "items_per_page"        => 0,           // *Items per Page (0 = all)
             ];
             return true;
+        }
+
+        /*
+         |  PLUGIN :: INSTALL
+         |  @since  0.2.0
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
+         */
+        public function install($position = 1): bool {
+            parent::install($position);
+            $this->dbFields["allowed_admin_roles"] = $this->db["allowed_admin_roles"] = ["admin", "editor"];
+            $this->dbFields["allowed_modal_roles"] = $this->db["allowed_modal_roles"] = ["admin", "editor", "author"];
+            return $this->save();
+        }
+
+        /*
+         |  PLUGIN :: UPGRADE
+         |  @since  0.2.0
+         |
+         |  @param  string  The current installed version.
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
+         */
+        public function upgrade(string $version): bool {
+
+            // Upgrade 0.1.x to 0.2.x
+            if(version_compare($version, "0.2.0", "<")) {
+                $this->db = array_merge($this->dbFields, $this->db);
+                return $this->save();
+            }
+            return true;
+        }
+
+        /*
+         |  PLUGIN :: REMOVE PLUGIN
+         |  @since  0.1.0
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
+         */
+        public function uninstall() {
+            global $users;
+
+            // Remove User Data
+            foreach($users->db AS $username => $data) {
+                unset($users->db[$username]["media_order"]);
+                unset($users->db[$username]["media_items_per_page"]);
+                unset($users->db[$username]["media_layout"]);
+                unset($users->db[$username]["media_favorites"]);
+            }
+            $users->save();
+
+            // Uninstall Plugin
+            return parent::uninstall();
+        }
+
+        /*
+         |  PLUGIN :: GET VALUE
+         |  @since  0.2.0
+         |
+         |  @param  string  The settings name.
+         |  @param  bool    TRUE to return a sanitized value, FALSE to do it not.
+         |
+         |  @return any     The respective (may sanitized) settings value.
+         */
+        public function getValue($field, $html = true) {
+            if(isset($this->db[$field])) {
+                return $this->db[$field];
+            }
+            return $this->dbFields[$field] ?? null;
         }
 
         /*
@@ -78,6 +158,8 @@ declare(strict_types=1);
          |  @since  0.1.0
          |  @info   The installed method is called twice during the bludit boot. The first call
          |          initializes the plugin, and the second one prepares the additional classes.
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
          */
         public function installed(): bool {
             global $media_admin;
@@ -139,11 +221,9 @@ declare(strict_types=1);
                 define("PAW_MEDIA_ROOT", $media_manager->root);
             }
 
-            // Add Plugin+ Metadata
-            if(PAW_MEDIA_PLUS && array_key_exists("name", $this->metadata)) {
-                $this->metadata["name"] .= "+";
-                $this->metadata["description"] .= ' <b style="font-weight:600;">' . bt_("Thanks for your Support!") . '</b>';
-            }
+            // Configure Default Values
+            $this->dbFields["allowed_admin_roles"] = ["admin", "editor"];
+            $this->dbFields["allowed_modal_roles"] = ["admin", "editor", "author"];
 
             // Do Upgrade & Return
             if(version_compare($this->db["version"] ?? "0.1.1", self::VERSION, "<")) {
@@ -153,54 +233,23 @@ declare(strict_types=1);
         }
 
         /*
-         |  PLUGIN :: UPGRADE VERSION
-         |  @since  0.2.0
-         |
-         |  @param  string  The current installed version.
-         |
-         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
-         */
-        public function upgrade(string $version): bool {
-
-            // Upgrade 0.1.x to 0.2.x
-            if(version_compare($version, "0.2.0", "<")) {
-                $this->db = array_merge($this->dbFields, $this->db);
-                return $this->save();
-            }
-            return true;
-        }
-
-        /*
-         |  PLUGIN :: REMOVE PLUGIN
-         |  @since  0.1.0
-         */
-        public function uninstall() {
-            global $users;
-
-            // Remove User Data
-            foreach($users->db AS $username => $data) {
-                unset($users->db[$username]["media_order"]);
-                unset($users->db[$username]["media_items_per_page"]);
-                unset($users->db[$username]["media_layout"]);
-                unset($users->db[$username]["media_favorites"]);
-            }
-            $users->save();
-
-            // Uninstall Plugin
-            return parent::uninstall();
-        }
-
-        /*
          |  HOOK :: PLUGIN CONFIG FORM
          |  @since  0.1.0
+         |
+         |  @return void
          */
         public function form(): void {
-            include "admin" . DS . "form.php";
+            if(DEBUG_MODE && ($_GET["translate"] ?? "") === "true") {
+                bt_fetch(PAW_MEDIA_PATH);
+            }
+            include "admin" . DS . "admin-form.php";
         }
 
         /*
          |  HOOK :: PLUGIN CONFIG FORM SUBMIT
          |  @since  0.1.0
+         |
+         |  @return bool    TRUE if the upgrade was successfullfy, FALSE if not.
          */
         public function post(): bool {
             $data = $_POST;
@@ -228,6 +277,18 @@ declare(strict_types=1);
                     continue;
                 }
 
+                // Validate Roles
+                if(strpos($field, "allowed") === 0) {
+                    $this->db[$field] = ["admin"];
+
+                    if(in_array("editor", ($data[$field] ?? []))) {
+                        $this->db[$field][] = "editor";
+                    }
+                    if(in_array("author", ($data[$field] ?? []))) {
+                        $this->db[$field][] = "author";
+                    }
+                }
+
                 // Validate Custom Mime Types
                 if($field === "custom_mime_types" && isset($data[$field])) {
                     if(empty($data[$field])) {
@@ -246,7 +307,6 @@ declare(strict_types=1);
                         $output[$mime] = array_map("trim", explode(",", $ext));
                     }
                     $this->db[$field] = $output;
-
                 }
             }
             return $this->save();
@@ -255,6 +315,8 @@ declare(strict_types=1);
         /*
          |  HOOK :: BEFORE ADMIN LOAD
          |  @since  0.1.0
+         |
+         |  @return void
          */
         public function beforeAdminLoad(): void {
             global $url;
@@ -264,38 +326,42 @@ declare(strict_types=1);
             if(strpos($url->slug(), "media") !== 0) {
                 return;
             }
-            checkRole(array("admin"));
 
             // Change Layout
-            if(isset($_GET["layout"]) && in_array($_GET["layout"], ["table", "grid"])) {
-                $this->setField("layout", $_GET["layout"]);
+            $layout = $_GET["layout"] ?? $_POST["layout"] ?? null;
+            if(in_array($layout, ["table", "grid"])) {
+                $this->setField("layout", $layout);
             }
 
             // Check Administration
             if($media_admin->ajax && (strpos($_SERVER["HTTP_REFERER"], "new-content") !== false || strpos($_SERVER["HTTP_REFERER"], "edit-content") !== false)) {
+                checkRole($this->getValue("allowed_modal_roles"));
                 $view = "modal";
             } else {
+                checkRole($this->getValue("allowed_admin_roles"));
                 $view = "media";
             }
 
             // Init Administration
-            $media_admin->path = trim($url->slug(), "/");
-            $media_admin->view = $view;
-            $media_admin->method = explode("/", $media_admin->path)[1] ?? "index";
-            $media_admin->query = $_GET;
+            $handle = explode("/", trim($url->slug(), "/"));
+            $media_admin->custom = ($view === "media");
+            $media_admin->method = $handle[1] ?? null;
 
             // Handle Request
-            if($media_admin->method !== "index") {
-                $media_admin->submit();
+            if(isset($handle[1])) {
+                $media_admin->request();
             }
         }
 
         /*
          |  HOOK :: ADMIN HEADER
          |  @since  0.1.0
+         |
+         |  @return string  The media stylesheets and scripts.
          */
         public function adminHead(): string {
             global $url;
+            global $login;
 
             // Set Data
             if(strpos($url->slug(), "media") === 0) {
@@ -304,31 +370,55 @@ declare(strict_types=1);
                 $admin = true;
             }
 
+            // Configure PLUS Metadata
+            if(PAW_MEDIA_PLUS && array_key_exists("name", $this->metadata)) {
+                $this->metadata["name"] .= '<span class="paw-plus">PLUS</span>';
+                $this->metadata["description"] .= ' <b style="font-weight:600;">' . bt_("Thanks for your Support!") . '</b>';
+            }
+
             // Return Scripts and Stylesheets
             ob_start();
             ?>
                 <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/custom-file.min.js?ver=1.3.4"></script>
                 <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/dropzone.min.js?ver=5.7.0"></script>
-                <script type="text/javascript">
-                    ;(function() {
-                        window.media = {
-                            admin: <?php echo ($admin)? "true": "false"; ?>,
-                            strings: {
-                                "js-error-title":   '<?php bt_e("JavaScript Error"); ?>',
-                                "js-error-text":    '<?php bt_e("An JavaScript error occured, please reload the page and try again."); ?>',
-                                "js-form-create":   '<?php bt_e("Create Form"); ?>',
-                                "js-form-search":   '<?php bt_e("Search Form"); ?>',
-                                "js-form-move":     '<?php bt_e("Move Form"); ?>',
-                                "js-form-upload":   '<?php bt_e("Upload Form"); ?>',
-                                "js-link-delete":   '<?php bt_e("Delete"); ?>',
-                                "js-link-favorite": '<?php bt_e("Favorite"); ?>',
-                                "js-media-title":   '<?php bt_e("Media"); ?>',
-                                "js-unknown":       '<?php bt_e("An unknown error is occured."); ?>'
-                            }
-                        };
-                    }(window));
-                </script>
                 <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/media.js?ver=<?php echo self::VERSION; ?>"></script>
+                <?php if(PAW_MEDIA_PLUS) { ?><script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/media-plus.js?ver=<?php echo self::VERSION; ?>"></script><?php } ?><?php echo PHP_EOL; ?>
+                <script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/admin.js?ver=<?php echo self::VERSION; ?>"></script>
+                <?php if(PAW_MEDIA_PLUS) { ?><script type="text/javascript" src="<?php echo PAW_MEDIA_DOMAIN; ?>admin/js/admin-plus.js?ver=<?php echo self::VERSION; ?>"></script><?php } ?><?php echo PHP_EOL; ?>
+                <script type="text/javascript">
+                    ;(function(Media) {
+                        Media.admin = <?php echo ($admin)? "true": "false"; ?>;
+                        Media.ajax = "<?php echo DOMAIN_ADMIN; ?>media/";
+                        Media.strings = {
+                            "js-error-title":   '<?php bt_e("JavaScript Error"); ?>',
+                            "js-error-text":    '<?php bt_e("An JavaScript error occured, please reload the page and try again."); ?>',
+                            "js-form-create":   '<?php bt_e("Create Form"); ?>',
+                            "js-form-search":   '<?php bt_e("Search Form"); ?>',
+                            "js-form-move":     '<?php bt_e("Move Form"); ?>',
+                            "js-form-upload":   '<?php bt_e("Upload Form"); ?>',
+                            "js-link-delete":   '<?php bt_e("Delete"); ?>',
+                            "js-link-favorite": '<?php bt_e("Favorite"); ?>',
+                            "js-button-goback": '<?php bt_e("Go Back"); ?>',
+                            "js-media-title":   '<?php echo "Media" . (PAW_MEDIA_PLUS? "+": ""); ?>',
+                            "js-unknown":       '<?php bt_e("An unknown error is occured."); ?>'
+                        };
+                    }).call(window, window.Media);
+
+                    <?php if($login->role() === "author" && in_array("author", $this->getValue("allowed_admin_roles"))) { ?>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        let navi = document.querySelector(".sidebar ul.nav");
+                        let empty = document.createElement("LI");
+                        empty.className = "nav-item";
+                        empty.innerHTML = "<hr>";
+                        let media = document.createElement("LI");
+                        media.className = "nav-item";
+                        media.innerHTML = '<?php echo $this->adminSidebar(); ?>';
+
+                        navi.insertBefore(empty, navi.children[navi.children.length-1]);
+                        navi.insertBefore(media, navi.children[navi.children.length-1]);
+                    });
+                    <?php } ?>
+                </script>
                 <link type="text/css" rel="stylesheet" href="<?php echo PAW_MEDIA_DOMAIN; ?>admin/css/media.min.css?ver=<?php echo self::VERSION; ?>"></link>
 
                 <?php if(PAW_MEDIA_PLUS) { ?>
@@ -354,26 +444,43 @@ declare(strict_types=1);
         /*
          |  HOOK :: ADMIN SIDEBAR
          |  @since  0.1.0
+         |
+         |  @return string  The sidebar navigation item.
          */
         public function adminSidebar(): string {
+            global $login;
             global $media_admin;
 
-            if(PAW_MEDIA_PLUS) {
-                return '<a href="' . $media_admin->buildURL("media") . '" class="nav-link">Media+ Manager</a>';
+            // Check Roles
+            if(!in_array($login->role(), $this->getValue("allowed_admin_roles"))) {
+                return '';
             }
-            return '<a href="' . $media_admin->buildURL("media") . '" class="nav-link">Media Manager</a>';
+
+            // Return Link
+            if(PAW_MEDIA_PLUS) {
+                return '<a href="' . $media_admin->buildURL("media") . '" class="nav-link">Media+</a>';
+            }
+            return '<a href="' . $media_admin->buildURL("media") . '" class="nav-link">Media</a>';
         }
 
         /*
          |  HOOK :: BEFORE ADMIN CONTENT
          |  @info   Fetch the HTML content, to inject the media admin page.
          |  @since  0.1.0
+         |
+         |  @return void
          */
         public function adminBodyBegin(): void {
+            global $login;
             global $media_admin;
 
             // Check if Administration Page is shown
-            if($media_admin->view !== "media" || $media_admin->method !== "index") {
+            if(!$media_admin->custom && empty($media_admin->method)) {
+                return;
+            }
+
+            // Check Roles
+            if(!in_array($login->role(), $this->getValue("allowed_admin_roles"))) {
                 return;
             }
 
@@ -385,9 +492,12 @@ declare(strict_types=1);
          |  HOOK :: AFTER ADMIN CONTENT
          |  @info   Handle the HTML content, to inject the media admin page.
          |  @since  0.1.0
+         |
+         |  @return void
          */
         public function adminBodyEnd(): void {
             global $url;
+            global $login;
             global $security;
             global $media_admin;
             global $media_manager;
@@ -395,8 +505,15 @@ declare(strict_types=1);
             // Check if `new-content` or `edit-content` page is shown
             $page = explode("/", $url->slug())[0];
             if($page === "new-content" || $page === "edit-content") {
-                $this->adminContentArea(); return;
-            } else if($media_admin->view !== "media" || $media_admin->method !== "index") {
+                $this->adminContentArea();
+                return;
+            }
+            if(!$media_admin->custom && empty($media_admin->method)) {
+                return;
+            }
+
+            // Check Roles
+            if(!in_array($login->role(), $this->getValue("allowed_admin_roles"))) {
                 return;
             }
 
@@ -405,19 +522,14 @@ declare(strict_types=1);
             ob_end_clean();
 
             // Set Pathdata
-            $pathdata = MediaManager::pathinfo($_GET["path"] ?? "");
-            extract(empty($pathdata)? MediaManager::pathinfo(""): $pathdata);
 
             // Load Admin Page
             ob_start();
-            if(is_file($absolute)) {
-                require "admin" . DS . "file.php";
-            } else {
-                require "admin" . DS . "list.php";
-            }
+            $pathinfo = MediaManager::pathinfo($_GET["path"] ?? "");
 
-            // Load Modals
-        	require "admin" . DS . "modal-folder.php";
+            // Load Admin Page
+            require "admin" . DS . "admin-page.php";
+        	require "admin" . DS . "modal-create.php";
         	require "admin" . DS . "modal-edit.php";
         	require "admin" . DS . "modal-delete.php";
             if(PAW_MEDIA_PLUS) {
@@ -441,31 +553,28 @@ declare(strict_types=1);
         /*
          |  HOOK :: ADMIN CONTENT AREA
          |  @since  0.1.0
+         |
+         |  @return void
          */
         private function adminContentArea(): void {
             global $url;
+            global $login;
             global $security;
             global $media_admin;
             global $media_manager;
 
-            // Init Admin
-            $media_admin->path = explode("/", trim($url->slug(), "/"))[0];
-            $media_admin->view = "modal";
-            $media_admin->method = "index";
-            $media_admin->query = [ ];
+            // Check Roles
+            if(!in_array($login->role(), $this->getValue("allowed_modal_roles"))) {
+                return;
+            }
 
             // Prepare Query
-            $absolute = PAW_MEDIA_ROOT;
-            if(!empty($_GET["path"]) && ($temp =  MediaManager::absolute($_GET["path"])) !== null) {
-                $absolute = $temp;
-            }
-            $relative = MediaManager::relative($absolute);
+            $pathinfo = MediaManager::pathinfo($_GET["path"] ?? "");
 
-            // Load Main Content Modal
-            include "admin" . DS . "modal.php";
-
-            // Load Modals
-        	require "admin" . DS . "modal-folder.php";
+            // Load Admin Modal
+            include "admin" . DS . "admin-modal.php";
+        	require "admin" . DS . "modal-embed.php";
+        	require "admin" . DS . "modal-create.php";
         	require "admin" . DS . "modal-edit.php";
         	require "admin" . DS . "modal-delete.php";
             if(PAW_MEDIA_PLUS) {

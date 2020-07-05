@@ -14,10 +14,10 @@ declare(strict_types=1);
 
     // Main File Handler
     class MediaManager {
+        /*
+         |  MIME/TYPE => [".allowed", ".extensions"]
+         */
         const MIME_TYPES = [
-            //
-            //  "MIME/TYPE" => [".allowed", ".extensions"]
-            //
             "audio/aac" => [".aac"],
             "audio/midi" => [".mid", ".midi"],
             "audio/x-midi" => [".mid", ".midi"],
@@ -25,7 +25,6 @@ declare(strict_types=1);
             "audio/ogg" => [".oga"],
             "audio/wav" => [".wav"],
             "audio/webm" => [".webm"],
-
             "image/bmp" => [".bmp"],
             "image/gif" => [".gif"],
             "image/jpeg" => [".jpg", ".jpeg"],
@@ -34,14 +33,12 @@ declare(strict_types=1);
             "image/tiff" => [".tif", ".tiff"],
             "image/vnd.microsoft.icon" => [".ico"],
             "image/webp" => [".webp"],
-
             "video/x-msvideo" => [".avi"],
             "video/mpeg" => [".mpeg"],
             "video/ogg" => [".ogv"],
             "video/mp2t" => [".ts"],
             "video/mp4" => [".mp4"],
             "video/webm" => [".webp"],
-
             "application/x-bzip" => [".bz"],
             "application/x-bzip2" => [".bz2"],
             "application/gzip" => [".gz"],
@@ -49,7 +46,6 @@ declare(strict_types=1);
             "application/x-tar" => [".tar"],
             "application/zip" => [".zip"],
             "application/x-7z-compressed" => [".7z"],
-
             "application/pdf" => [".pdf"],
             "application/rtf" => [".rtf"],
             "application/msword" => [".doc"],
@@ -61,13 +57,6 @@ declare(strict_types=1);
             "application/vnd.oasis.opendocument.presentation" => [".odp"],
             "application/vnd.oasis.opendocument.spreadsheet" => [".ods"],
             "application/vnd.oasis.opendocument.text" => [".odt"],
-
-            // Special :: Link all other MIME/TYPEs which MAY get recognized as 'text/plain'
-            "text/plain" => [
-                "text/restructured", "text/markdown", "text/textile", "text/csv", "text/css",
-                "text/html", "text/xml", "text/x-php", "application/xhtml+xml", "text/javascript",
-                "text/typescript", "application/json",
-            ],
             "text/restructured" => [".rst"],
             "text/markdown" => [".md", ".markdown"],
             "text/textile" => [".textile"],
@@ -79,7 +68,14 @@ declare(strict_types=1);
             "application/xhtml+xml" => [".xhtml"],
             "text/javascript" => [".js", ".mjs", ".ts"],
             "text/typescript" => [".ts", ".tsc"],
-            "application/json" => [".json"]
+            "application/json" => [".json"],
+
+            // Special :: Link all other MIME/TYPEs which MAY get recognized as 'text/plain'
+            "text/plain" => [
+                "text/restructured", "text/markdown", "text/textile", "text/csv", "text/css",
+                "text/html", "text/xml", "text/x-php", "application/xhtml+xml", "text/javascript",
+                "text/typescript", "application/json",
+            ]
         ];
 
         /*
@@ -91,7 +87,7 @@ declare(strict_types=1);
          |  @return string  The absolute path, or NULL on failure.
          */
         static public function absolute(string $path): ?string {
-            $path = str_replace("\\/", DS, $path);
+            $path = str_replace("\\/", DS, urldecode($path));
 
             // Sanitize Path
             if(strpos($path, PAW_MEDIA_ROOT) !== 0) {
@@ -353,6 +349,15 @@ declare(strict_types=1);
             }
             [$name, $type, $tmp, $error, $size] = array_values($file);
 
+            // Replace Name
+            if(is_file($path)) {
+                $file = true;
+                $name = basename($path);
+                $path = dirname($path);
+            } else {
+                $file = false;
+            }
+
             // Reset Data
             $this->lastFile = [];
             $this->lastRevise = null;
@@ -376,18 +381,11 @@ declare(strict_types=1);
                 }
             }
 
-            // Don't Overwrite File
-            if(!$overwrite) {
-                $temp = $name;
-                $tempn = 1;
-                while(file_exists($path . DS . $temp) === true) {
-                    $temp = substr($name, 0, strrpos($name, ".")) . "_" . $tempn++ . substr($name, strrpos($name, "."));
-                }
-                $name = $temp;
-            } else if($revision && file_exists($path . DS . $name) === true) {
+            // File Revision
+            if($file && $revision) {
                 [$old, $ext] = [substr($name, 0, strrpos($name, ".")), substr($name, strrpos($name, "."))];
 
-                // Revision Name
+                // Change old File Name
                 $temp = $old . "_rev" . $ext;
                 $tempn = 1;
                 while(file_exists($path . DS . $temp) === true) {
@@ -399,6 +397,16 @@ declare(strict_types=1);
                     return bt_a("The old version of the file ':name' could not be renamed.", [':name' => $name]);
                 }
                 $this->lastRevise = $temp;
+            }
+
+            // File Overwrite
+            if(!$file && file_exists($path . DS . $name) && !$overwrite) {
+                $temp = $name;
+                $tempn = 1;
+                while(file_exists($path . DS . $temp) === true) {
+                    $temp = substr($name, 0, strrpos($name, ".")) . "_" . $tempn++ . substr($name, strrpos($name, "."));
+                }
+                $name = $temp;
             }
 
             // Check File Extension
@@ -418,19 +426,15 @@ declare(strict_types=1);
          |  HANDLE :: CREATE ITEM
          |  @since  0.2.0
          |
-         |  @param  string  The path, where the new directory or file should be created.
-         |  @param  string  The new directory or file name.
-         |  @param  multi   The content for the new file name, use an empty string for no content
-         |                  use NULL to create a directory.
+         |  @param  string  The absolute path, where the new folder or file should be created.
+         |  @param  string  The new name of the item.
+         |  @param  string  The item type: 'file' or 'folder'.
          |
          |  @return multi   TRUE if everything went fluffy or the error message as STRING.
          */
-        public function create(string $path, string $name, ?string $content = null)/*: bool | string */ {
-            $type = $content === null? bt_("file"): bt_("directory");
-
-            // Check Path
+        public function create(string $path, string $name, string $type)/*: bool | string */ {
             if(($path = self::absolute($path)) === null) {
-                return bt_a("The passed path for the new :type is invalid.", [':type' => $type]);
+                return bt_("The passed path for the file is invalid.");
             }
 
             // Check Name
@@ -442,12 +446,12 @@ declare(strict_types=1);
             }
 
             // Create
-            if($content === null) {
+            if($type === "folder") {
                 if(@Filesystem::mkdir($path . DS . $name) !== false) {
                     return true;
                 }
             } else {
-                if(@file_put_contents($path . DS . $name, $content) !== false) {
+                if(@file_put_contents($path . DS . $name, "") !== false) {
                     return true;
                 }
             }
@@ -455,7 +459,45 @@ declare(strict_types=1);
         }
 
         /*
-         |  HANDLE :: DELETE DIRECTORY OR FILE
+         |  HANDLE :: MOVE ITEM
+         |  @since  0.2.0
+         |
+         |  @param  string  The absolute path, of the folder or file which should be moved.
+         |  @param  string  The absolute new path, where the folder or file should be moved to.
+         |  @param  string  The (optional) new name of the file or folder,
+         |                  use null to use dir basename() of $oldpath.
+         |
+         |  @return multi   TRUE if everything went fluffy or the error message as STRING.
+         */
+        public function move(string $oldpath, string $newpath, ?string $newname = null) {
+            $type = is_dir($oldpath)? bt_("folder"): bt_("file");
+            $newname = empty($newname)? basename($oldpath): $newname;
+
+            // Check New Name
+            if(strpbrk($newname, "\\/?%*:|\"<>") !== false) {
+                return bt_a("The passed :type name is invalid.", [':type' => $type]);
+            }
+            if(file_exists($newpath . DS . $newname)) {
+                // The WINDOWS File System works completely case-insensitive so if the user just
+                // wants to change the letter cases, we need to check the realpath again!
+                if(dirname($oldpath) === $newpath) {
+                    if(strcmp(realpath($newpath . DS . $newname), $newpath . DS . $newname) === 0) {
+                        return bt_a("The passed :type ':name' does already exists.", [':type' => $type, ':name' => $newname]);
+                    }
+                } else {
+                    return bt_a("The passed :type ':name' does already exists.", [':type' => $type, ':name' => $newname]);
+                }
+            }
+
+            // Move
+            if(@Filesystem::mv($oldpath, $newpath . DS . $newname) !== false) {
+                return true;
+            }
+            return bt_a("The :type could not be moved.", [":type" => $type]);
+        }
+
+        /*
+         |  HANDLE :: DELETE ITEM
          |  @since  0.2.0
          |
          |  @param  string  The path INCLUDING the directory, which should be deleted.

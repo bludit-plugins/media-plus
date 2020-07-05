@@ -11,34 +11,34 @@ declare(strict_types=1);
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
 ?>
-<div class="media-list media-single-details" data-action="<?php echo $this->buildURL("media") ?>" data-path="<?php echo $dirname; ?>" data-file="<?php echo $basename; ?>" data-token="<?php echo $security->getTokenCSRF(); ?>">
+<div class="media-list media-list-details mb-5" data-name="<?php echo $pathinfo["basename"]; ?>" data-type="<?php echo $pathinfo["type"]; ?>">
     <div class="row">
         <div class="col-8">
             <div class="card shadow-sm">
                 <div class="card-header p-2 bg-white">
                     <form method="post" action="<?php echo $this->buildURL("media/rename"); ?>" class="row" data-media-form="rename">
                         <div class="col-10">
-                            <input type="text" class="form-control form-control-clean" name="rename" value="<?php echo $basename; ?>" readonly />
+                            <input type="text" class="form-control form-control-clean" name="newname" value="<?php echo $pathinfo["basename"]; ?>" readonly />
                         </div>
                         <div class="col-2 text-right">
                             <div class="btn-group">
-                                <button class="btn btn-success d-none" data-media-action="rename" data-media-value="submit">
+                                <button type="submit" class="btn btn-success d-none">
                                     <svg class="media-icon icon-white"><use href="#octicon-check" /></svg>
                                 </button>
-                                <button class="btn btn-danger d-none" data-media-action="rename" data-media-value="cancel">
+                                <button type="cancel" class="btn btn-danger d-none" data-media-action="renamed">
                                     <svg class="media-icon icon-white"><use href="#octicon-x" /></svg>
                                 </button>
 
-                                <button class="btn btn-light" data-media-action="rename">
+                                <button type="button" class="btn btn-light" data-media-action="renamed">
                                     <svg class="media-icon"><use href="#octicon-pencil" /></svg>
                                 </button>
-                                <button class="btn btn-light" data-media-action="resize">
+                                <button type="button" class="btn btn-light" data-media-action="resize">
                                     <svg class="media-icon"><use href="#octicon-screen-full" /></svg>
                                 </button>
 
                                 <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                                 <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
-                                <input type="hidden" name="path" value="<?php echo $absolute; ?>" />
+                                <input type="hidden" name="path" value="<?php echo $pathinfo["absolute"]; ?>" />
                                 <input type="hidden" name="media_action" value="rename" />
                             </div>
                         </div>
@@ -47,43 +47,42 @@ declare(strict_types=1);
 
                 <?php if($file_type === "image") { ?>
                     <div class="media-preview media-preview-image card-body p-0 text-center bg-light">
-                        <img src="<?php echo $url; ?>" class="d-block" alt="<?php bt_e("Image"); ?>" />
+                        <img src="<?php echo $pathinfo["url"]; ?>" class="d-block" alt="<?php bt_e("Image"); ?>" />
                     </div>
                 <?php } else if($file_type === "video") { ?>
                     <div class="media-preview media-preview-video card-body">
                         <video width="100%" controls>
-                            <source src="<?php echo $url; ?>" type="<?php echo $file_mime; ?>" />
+                            <source src="<?php echo $pathinfo["url"]; ?>" type="<?php echo $file_mime; ?>" />
                         </video>
                     </div>
                 <?php } else if($file_type === "audio") { ?>
                     <div class="media-preview media-preview-audio card-body">
                         <audio width="100%" controls>
-                            <source src="<?php echo $url; ?>" type="<?php echo $file_mime; ?>" />
+                            <source src="<?php echo $pathinfo["url"]; ?>" type="<?php echo $file_mime; ?>" />
                         </audio>
                     </div>
                 <?php } else if($file_mime === "application/pdf") { ?>
                     <div class="media-preview media-preview-audio card-body p-0">
-                        <object width="100%" data="<?php echo $url; ?>" type="application/pdf" class="d-block mb-0">
+                        <object width="100%" data="<?php echo $pathinfo["url"]; ?>" type="application/pdf" class="d-block mb-0">
                             <p><?php bt_a("Your browser doesn't support to show PDF files, please download the file :here.", [':here' => '<a href="'.$url.'">'.bt_("here").'</a>']); ?></p>
                         </object>
                     </div>
                 <?php } else if(PAW_MEDIA_PLUS && $file_type === "text") { ?>
-                    <?php if(($_GET["edit"] ?? "false") === "true") { ?>
+                    <?php if(($mode ?? "") === "edit") { ?>
                         <div class="media-preview media-preview-text card-body text-center bg-light p-0">
                             <form method="post" action="<?php echo $this->buildURL("media/edit"); ?>" class="w-100" data-media-form="edit">
-                                <textarea id="media-plus-file-editor" class="form-control" name="content" data-type="<?php echo $media_manager->getMIME($absolute); ?>"><?php echo file_get_contents($absolute); ?></textarea>
+                                <textarea id="media-plus-file-editor" class="form-control" name="content" data-type="<?php echo $media_manager->getMIME($pathinfo["absolute"]); ?>"><?php echo file_get_contents($pathinfo["absolute"]); ?></textarea>
 
+                                <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                                 <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                                <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
-                                <input type="hidden" name="file" value="<?php echo $absolute; ?>" />
-                                <input type="hidden" name="force" value="1" />
-                                <input type="hidden" name="media_action" value="edit" />
+                                <input type="hidden" name="path" value="<?php echo $pathinfo["absolute"]; ?>" />
+                                <input type="hidden" name="action" value="edit" />
                             </form>
                         </div>
                     <?php } else { ?>
                         <div class="media-preview media-preview-text card-body text-center bg-light p-0">
                             <span class="fa fa-file"></span><br />
-                            <a href="<?php echo $edit; ?>" class="btn btn-sm btn-primary"><?php bt_e("Edit this File"); ?></a>
+                            <a href="<?php echo $edit; ?>" class="btn btn-sm btn-primary" data-media-action="list" data-media-mode="edit"><?php bt_e("Edit this File"); ?></a>
                         </div>
                     <?php } ?>
                 <?php } else { ?>
@@ -93,25 +92,27 @@ declare(strict_types=1);
                 <?php } ?>
 
                 <div class="card-footer bg-white">
-                    <?php if(PAW_MEDIA_PLUS && ($_GET["edit"] ?? "false") === "true") { ?>
+                    <?php if(PAW_MEDIA_PLUS && ($mode ?? "") === "edit") { ?>
                         <div class="d-flex">
                             <div class="flex-fill text-left">
-                                <a href="<?php echo str_replace("edit=true", "edit=false", $edit); ?>" class="btn btn-sm btn-secondary"><?php bt_e("Cancel"); ?></a>
+                                <a href="<?php echo str_replace("mode=edit", "mode=list", $edit); ?>" class="btn btn-sm btn-secondary" data-media-action="list" data-media-mode="list"><?php bt_e("Cancel"); ?></a>
                             </div>
                             <div class="flex-fill text-right">
-                                <button class="btn btn-sm btn-success" data-media-action="edit" data-media-value="submit"><?php bt_e("Save Changes"); ?></button>
+                                <button class="btn btn-sm btn-success" data-media-action="edited" data-media-value="submit"><?php bt_e("Save Changes"); ?></button>
                             </div>
                         </div>
                     <?php } else { ?>
                         <div class="d-flex">
                             <div class="flex-fill text-left">
-                                <span class="badge badge-primary"><?php echo $media_manager->calcFileSize(filesize($absolute)); ?></span>
-                                <span class="badge badge-secondary"><?php echo $media_manager->getMIME($absolute); ?></span>
+                                <span class="badge badge-primary"><?php echo $media_manager->calcFileSize(filesize($pathinfo["absolute"])); ?></span>
+                                <span class="badge badge-secondary"><?php echo $media_manager->getMIME($pathinfo["absolute"]); ?></span>
                             </div>
                             <div class="flex-fill text-right">
                                 <?php if($file_type === "image") { ?>
-                                    <?php $size = getimagesize($real); ?>
-                                    <span class="badge badge-secondary"><?php echo $size[0] . "x" . $size[1]; ?></span>
+                                    <?php $size = getimagesize($pathinfo["absolute"]); ?>
+                                    <?php if(is_array($size)) { ?>
+                                        <span class="badge badge-secondary"><?php echo $size[0] . "x" . $size[1]; ?></span>
+                                    <?php } ?>
                                 <?php } else if($file_type === "video") { ?>
                                     <span class="badge badge-secondary" data-media-video="dimension">0x0</span>
                                     <span class="badge badge-secondary" data-media-video="duration">00:00</span>
@@ -121,7 +122,7 @@ declare(strict_types=1);
                                     <span class="badge badge-secondary"><?php
 
                                         // Advanced MIME/TYPE recognition
-                                        $real_mime = $media_manager->getMIME($real);
+                                        $real_mime = $media_manager->getMIME($pathinfo["absolute"]);
                                         switch($real_mime) {
                                             case "application/pdf":
                                                 print("PDF Document"); break;
@@ -186,27 +187,27 @@ declare(strict_types=1);
         <div class="col-4 pl-5">
             <div class="card shadow-sm mb-5" style="width:290px;">
                 <div class="card-body">
-                    <?php if($this->view === "modal") { ?>
-                        <a href="<?php echo $url; ?>?action=embed" class="btn btn-light btn-block" data-media-name="<?php echo $basename; ?>" data-media-action="embed" data-media-mime="<?php echo $file_mime; ?>">
+                    <?php if(!$this->custom) { ?>
+                        <a href="<?php echo $pathinfo["url"]; ?>?action=embed" class="btn btn-light btn-block" data-media-name="<?php echo $pathinfo["basename"]; ?>" data-media-action="embed" data-media-mime="<?php echo $file_mime; ?>">
                             <?php bt_e("Insert File"); ?>
                         </a>
                         <?php if($file_type === "image") { ?>
-                            <a href="<?php echo $url; ?>?action=cover" class="btn btn-light btn-block" data-media-action="cover">
+                            <a href="<?php echo $pathinfo["url"]; ?>?action=cover" class="btn btn-light btn-block" data-media-action="cover">
                                 <?php bt_e("Set as Cover Image"); ?>
                             </a>
                         <?php } ?>
                     <?php } ?>
-                    <a href="<?php echo $url; ?>" class="btn btn-secondary btn-block" target="_blank">
+                    <a href="<?php echo $pathinfo["url"]; ?>" class="btn btn-secondary btn-block" target="_blank">
                         <svg class="media-icon icon-white"><use href="#octicon-link-external" /></svg> <?php bt_e("View in a new Tab"); ?>
                     </a>
-                    <a href="<?php echo $delete; ?>" class="btn btn-danger btn-block" data-media-action="delete">
+                    <a href="<?php echo $delete; ?>" class="btn btn-danger btn-block" data-media-path="<?php echo $pathinfo["slug"]; ?>">
                         <svg class="media-icon icon-white"><use href="#octicon-trashcan" /></svg> <?php bt_e("Delete File"); ?>
                     </a>
                 </div>
             </div>
 
             <div class="card shadow-sm mb-5" style="width:290px;">
-                <form method="post" action="<?php echo $this->buildURL("media/upload"); ?>" class="card-body" enctype="multipart/form-data">
+                <form method="post" action="<?php echo $this->buildURL("media/upload"); ?>" class="card-body" enctype="multipart/form-data" data-media-form="upload">
                     <div class="input-group mb-3">
                         <div class="custom-file">
                             <input id="media_file" type="file" name="media" class="custom-file-input" />
@@ -218,12 +219,12 @@ declare(strict_types=1);
                         <label for="media_revision" class="custom-control-label" style="line-height: 20px;"><?php bt_e("Keep current Version"); ?></label>
                     </div>
 
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
-                    <input type="hidden" name="path" value="<?php echo $dirname; ?>" />
-                    <input type="hidden" name="name" value="<?php echo $basename; ?>" />
+                    <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="overwrite" value="1" />
-                    <button type="submit" name="media_action" value="upload" class="btn btn-primary btn-block"><?php bt_e("Upload a new Version"); ?></button>
+                    <input type="hidden" name="action" value="upload" />
+                    <button type="submit" name="action" value="upload" class="btn btn-primary btn-block"><?php bt_e("Upload a new Version"); ?></button>
                 </form>
 
                 <div class="card-footer">
@@ -235,7 +236,7 @@ declare(strict_types=1);
                     </div>
 
                     <div id="show-history" class="collapse">
-                        <?php $history = $media_history->get($slug); ?>
+                        <?php $history = $media_history->get($pathinfo["slug"]); ?>
                         <ul class="media-history list-unstyled pt-2 pb-1 px-0 my-0 text-muted">
                             <?php if(empty($history)) { ?>
                                 <li><?php bt_e("No changes made so far"); ?></li>

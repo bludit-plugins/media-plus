@@ -32,9 +32,9 @@
                 <div class="col">
                     <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                    <input type="hidden" name="path" value="" data-media-value="path" />
-                    <input type="hidden" name="media_action" value="delete" />
-                    <button class="btn btn-danger"><?php bt_e("Delete Permanently"); ?></button>
+                    <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
+                    <input type="hidden" name="action" value="delete" />
+                    <button name="action" value="delete" class="btn btn-danger"><?php bt_e("Delete Permanently"); ?></button>
                 </div>
             </div>
         </form>

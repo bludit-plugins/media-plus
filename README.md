@@ -4,16 +4,24 @@ Media - The advanced Media & File Manager
 [![Version](https://s.pytes.me/7850b437)](https://github.com/pytesNET/media/releases)
 [![Support Me](https://s.pytes.me/4a1717aa)](https://buymeacoffee.com/pytesNET)
 
+
+Media 0.2.0
+Bludit v3.9.0+
+PHP 7.2.0+
+Support Me buxmeacoff.ee/pytesNET
+
 The Media Bludit Plugin adds a feature-rich Media & File Manager to your Bludit Website.
 
 You can use **Media** directly on its own custom administration page, but it also takes over the
 known "Images" popup on the content creation view. So you don't need to switch between your browser
 tabs to directly insert your files (the **Media** Plugin supports Audio, Video & PDF files too).
 
+**Media requires PHP 7.2.0 (or above), so please check your PHP version first!**
+
 Features
 --------
 -   **Walk** smoothly through your upload directories
--   **Revise**, **Rename** and **Delete** your stuff quickly
+-   **Revise**, **Rename**, **Move** and **Delete** your stuff quickly
 -   **Embed** your files seamless while editing your posts...
     -   ...with support for **Image**, **Video**, **Audio** & **PDF** files
 -   *[COMING]* Automatic **Thumbnail** Creation (with adaptable size)
@@ -72,7 +80,7 @@ The following awesome dependencies are included in this package.
 
 Installation
 ------------
-1. Download the **Media** or Buy the [**Media Plus**](https://gum.co/mediaplus) Plugin
+1. Download the **Media** or Buy the [**Media+**](https://gum.co/mediaplus) Plugin
 2. Upload the main plugin folder to your `bl-plugins` directory of your Bludit Website(s)
 3. Enable the "Media" or "Media Plus" Plugin on the Plugins admin page
 

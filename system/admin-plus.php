@@ -20,101 +20,103 @@ declare(strict_types=1);
         public $search = "";
 
         /*
+         |  CONSTRUCTOR
+         |  @since  0.2.0
+         */
+        public function __construct() {
+            parent::__construct();
+
+            $this->methods["search"] = ["GET", "POST"];
+            $this->methods["edit"] = ["POST"];
+            $this->methods["favorite"] = ["GET", "POST"];
+        }
+
+        /*
          |  METHOD :: SEARCH
+         |  @type   GET | POST
          |  @since  0.1.0
          |
+         |  @param  string  The absolute path, where the action should be happen.
          |  @param  array   The requested data array.
-         |                      'path'      The current path.
-         |                      'search'    The search string.
+         |                      'search'    The search term.
          |
          |  @return void    Prints the JSON output on AJAX requests, True otherwise.
          */
-        protected function _search(array $data = []) {
+        protected function _search(string $path, array $data = []) {
             global $media_manager;
 
-            // Validate Path
-            if(($path = MediaManager::absolute($data["path"])) === null) {
-                return $this->bye(false, bt_("The passed path is invalid."));
-            }
-            $base = MediaManager::slug($path);
-
-            // AJAX Search
-            if($this->ajax) {
-                $content = $this->renderList($media_manager->search($data["search"], $base), $base);
-                return $this->bye(true, bt_("The path is valid."), ["content" => $content, "path" => $base]);
+            // Check Arguments
+            if(!isset($data["search"])) {
+                return $this->response(false, bt_a("The action :action was called incorrectly.", [":action" => "/search"]));
             }
 
-            // Non-AJAX Search
-            $this->method = "index";
-            $this->search = Sanitize::html(strip_tags($data["search"]));
-            return true;
+            // Success
+            return $this->response(true, bt_("The passed search is valid"), [
+                "path"      => $path,
+                "search"    => Sanitize::html(strip_tags($data["search"])),
+                "content"   => $this->renderList($media_manager->search($data["search"], $path), $path)
+            ]);
         }
 
         /*
          |  METHOD :: EDIT FILE
+         |  @type   POST
          |  @since  0.2.0
          |
+         |  @param  string  The absolute path, where the action should be happen.
          |  @param  array   The requested data array.
-         |                      'file'      The path to the file (with file name).
          |                      'content'   The new content for the file.
          |
          |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
          */
-        protected function _edit(array $data) {
+        protected function _edit(string $path, array $data) {
             global $login;
             global $media_manager;
             global $media_history;
 
-            // Validate Path
-            if(($file = MediaManager::absolute($data["file"])) === null) {
-                return $this->bye(false, bt_("The passed file is invalid."));
+            // Check Arguments
+            if(!isset($data["content"]) || !is_file($path)) {
+                return $this->response(false, bt_a("The action :action was called incorrectly.", [":action" => "/edit"]));
             }
 
             // Edit Content
-            if(isset($data["content"])) {
-                if(@file_put_contents($file, $data["content"]) === false) {
-                    return $this->bye(false, bt_("The file could not be updated."), ["path" => $file]);
-                }
-                $media_history->log("edit", MediaManager::slug($file), $login->username());
-                return $this->bye(true, bt_("The file could be updated."), ["path" => $file]);
+            if(@file_put_contents($path, $data["content"]) === false) {
+                return $this->response(false, bt_("The file ':path' could not be updated."));
             }
 
-            // Error
-            return $this->bye(false, bt_("The action was called incorrectly."), ["path" => $file]);
+            // Handle History
+            $media_history->log("edit", $path, $login->username());
+
+            // Success
+            return $this->response(true, bt_("The file could be updated successfully."), [
+                "path"  => $path
+            ]);
         }
 
         /*
          |  METHOD :: FAVORITE
+         |  @type   GET | POST
          |  @since  0.1.0
          |
+         |  @param  string  The absolute path, where the action should be happen.
          |  @param  array   The requested data array.
-         |                      'path'      The current path (with file or directory name).
          |
          |  @return void    Prints the JSON output on AJAX requests, Redirects otherwise.
          */
-        protected function _favorite(array $data = []) {
+        protected function _favorite(string $path, array $data = []) {
             global $login;
             global $users;
 
-            // Check Path
-            if(($path = MediaManager::absolute($data["path"])) === false) {
-                return $this->bye(false, bt_("The passed path is invalid."));
-            }
-
-            // Prepare Query
-            $query = [
-                "path"      => dirname($path),
-                "favorite"  => [$data["path"], !$this->isFavorite($data["path"])]
-            ];
-            if(strpos($_SERVER["HTTP_REFERER"] ?? "", basename($path)) !== false) {
-                $query["path"] .= DS . basename($path);
-            }
-
-            // Handle & Return
+            // Set Favourite
             if($this->setFavorite($path) === false) {
-                return $this->bye(false, bt_("You favorites could not be updated."), $query);
+                return $this->response(false, bt_("Your favorites could not be updated."));
             }
-            return $this->bye(true, bt_("You favorites have been updated successfully."), $query);
+
+            // Success
+            return $this->response(true, bt_("You favorites have been updated successfully."), [
+                "path"      => $path,
+                "favorite"  => $this->isFavorite($path)
+            ]);
         }
 
         /*
@@ -250,59 +252,57 @@ declare(strict_types=1);
             // Render
             ob_start();
             ?>
-                <div class="btn-group tools">
-                    <div class="btn-group">
-                        <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown"><span class="fa fa-heart"></span></button>
-                        <div class="media-favorites-dropdown dropdown-menu dropdown-menu-right shadow-sm">
-                            <?php if(empty($favs)){ ?>
-                                <span class="dropdown-item disabled text-center"><?php bt_e("No Favorites available"); ?></span>
-                            <?php } else { ?>
-                                <?php
-                                    $files = [];
-                                    $folders = [];
-                                    foreach($favs AS $fav) {
-                                        if(($temp = MediaManager::absolute($fav)) === null) {
-                                            continue;
-                                        }
-
-                                        if(is_file($temp)) {
-                                            $url = $this->buildURL("media", ["path" => $fav]);
-                                            $files[] = '<a href="'.$url.'" class="dropdown-item" data-media-action="list"><span class="fa fa-file"></span>'. basename($fav) .'</a>';
-                                        } else {
-                                            $url = $this->buildURL("media", ["path" => $fav]);
-                                            $folders[] = '<a href="'.$url.'" class="dropdown-item" data-media-action="list"><span class="fa fa-folder"></span>'. basename($fav) .'</a>';
-                                        }
+                <div class="tools btn-group">
+                    <button class="btn btn-secondary dropdown-toggle" data-toggle="dropdown"><span class="fa fa-heart"></span></button>
+                    <div class="media-favorites-dropdown dropdown-menu dropdown-menu-right shadow-sm">
+                        <?php if(empty($favs)){ ?>
+                            <span class="dropdown-item disabled text-center py-3"><?php bt_e("No Favorites available"); ?></span>
+                        <?php } else { ?>
+                            <?php
+                                $files = [];
+                                $folders = [];
+                                foreach($favs AS $fav) {
+                                    if(($temp = MediaManager::absolute($fav)) === null) {
+                                        continue;
                                     }
 
-                                    if(empty($files) XOR empty($folders)) {
-                                        ?>
-                                            <div class="tab-content tab-content-single">
-                                                <?php print(implode("\n", empty($files)? $folders: $files)); ?>
-                                            </div>
-                                        <?php
+                                    if(is_file($temp)) {
+                                        $url = $this->buildURL("media", ["path" => $fav]);
+                                        $files[] = '<a href="'.$url.'" class="dropdown-item" data-media-action="list"><span class="fa fa-file"></span>'. basename($fav) .'</a>';
                                     } else {
-                                        ?>
-                                            <ul class="nav nav-tabs">
-                                                <li class="nav-item">
-                                                    <a href="#media-favorites-tab-folders" class="nav-link active" data-toggle="tab"><?php bt_e("Folders"); ?></a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a href="#media-favorites-tab-files" class="nav-link" data-toggle="tab"><?php bt_e("Files"); ?></a>
-                                                </li>
-                                            </ul>
-                                            <div class="tab-content" id="myTabContent">
-                                                <div id="media-favorites-tab-folders" class="tab-pane show active">
-                                                    <?php print(implode("\n", $folders)); ?>
-                                                </div>
-                                                <div id="media-favorites-tab-files" class="tab-pane">
-                                                    <?php print(implode("\n", $files)); ?>
-                                                </div>
-                                            </div>
-                                        <?php
+                                        $url = $this->buildURL("media", ["path" => $fav]);
+                                        $folders[] = '<a href="'.$url.'" class="dropdown-item" data-media-action="list"><span class="fa fa-folder"></span>'. basename($fav) .'</a>';
                                     }
-                                ?>
-                            <?php } ?>
-                        </div>
+                                }
+
+                                if(empty($files) XOR empty($folders)) {
+                                    ?>
+                                        <div class="tab-content tab-content-single">
+                                            <?php print(implode("\n", empty($files)? $folders: $files)); ?>
+                                        </div>
+                                    <?php
+                                } else {
+                                    ?>
+                                        <ul class="nav nav-tabs">
+                                            <li class="nav-item">
+                                                <a href="#media-favorites-tab-folders" class="nav-link active" data-toggle="tab"><?php bt_e("Folders"); ?></a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="#media-favorites-tab-files" class="nav-link" data-toggle="tab"><?php bt_e("Files"); ?></a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content" id="myTabContent">
+                                            <div id="media-favorites-tab-folders" class="tab-pane show active">
+                                                <?php print(implode("\n", $folders)); ?>
+                                            </div>
+                                            <div id="media-favorites-tab-files" class="tab-pane">
+                                                <?php print(implode("\n", $files)); ?>
+                                            </div>
+                                        </div>
+                                    <?php
+                                }
+                            ?>
+                        <?php } ?>
                     </div>
                     <a href="#media-search" class="btn btn-secondary" data-toggle="modal"><span class="fa fa-search"></span></a>
                 </div>

@@ -5,10 +5,16 @@ Version 0.2.0 - Alpha
 ---------------------
 -   Add: New option to change the default upload path (root, root/pages, root/media).
 -   Add: New option to resolve folder names to its slugs or titles.
+-   Add: New option to define who can access the custom admin page and modal.
 -   Add: The new `delete()` method on the `MediaManager` class.
 -   Add: The new `_rename()` action method on the `MediaAdmin` class.
 -   Add: The new `modal-edit.php` modal (file).
 -   Add: The new `modal-delete.php` modal (file).
+-   Update: The whole JavaScript environment.
+-   Update: A new JavaScript Breadcrumb builder.
+-   Update: A new JavaScript 'Go Back' Button handler.
+-   Update: A new Dropzone Upload toast interface.
+-   Update: Custom core plugin methods.
 -   Update: Add an own static media upload directory.
 -   Update: Change the default upload path to the new static one.
 -   Update: Using the real bt toolset v1.0.0.

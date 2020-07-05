@@ -9,6 +9,7 @@
  |  @license    X11 / MIT License
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
+    global $security;
     global $media_admin;
 
 ?>
@@ -16,7 +17,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Media Manager</h5>
+                <h5 class="modal-title"><div class="media-logo-container"><div class="media-logo smaller"><span></span><span></span><span></span><span></span></div></div> Media Manager</h5>
                 <button type="button" class="close" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
@@ -30,7 +31,7 @@
                         }
                         ?>
                         <nav class="media-toolbar <?php echo isset($tools)? "media-toolbar-plus": ""; ?> m-0">
-                            <a href="<?php echo $media_admin->buildURL("media", ["path" => "pages/" . PAGE_IMAGES_KEY, "create" => "true"]); ?>" class="page-folder btn btn-light" data-media-action="list">
+                            <a href="<?php echo $media_admin->buildURL("media", ["path" => "pages/" . PAGE_IMAGES_KEY, "temp" => "true"]); ?>" class="page-folder btn btn-light" data-media-action="list">
                                 <?php bt_e("Page Folder"); ?>
                             </a>
                             <ol class="breadcrumb m-0 p-2 flex-nowrap">
@@ -48,7 +49,7 @@
                         </nav>
                     </div>
 
-                    <div class="text-right pl-2">
+                    <div class="action-handle text-right pl-2">
                         <div class="btn-group">
                             <button class="btn btn-light" data-toggle="modal" data-target="#media-create-folder">
                                 <span class="fa fa-folder"></span><?php bt_e("Create Folder"); ?>
@@ -60,20 +61,20 @@
 
                         <div class="btn-group">
                 			<?php $href = $media_admin->buildURL("media", ["layout" => "table"], false); ?>
-                            <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "table"? "active": ""; ?>" data-media-action="list" data-media-layout="table">
+                            <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "table"? "active": ""; ?>" data-media-action="reload" data-media-layout="table">
                 				<svg class="media-icon"><use href="#octicon-three-bars" /></svg>
                             </a>
 
                 			<?php $href = $media_admin->buildURL("media", ["layout" => "grid"], false); ?>
-                            <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "grid"? "active": ""; ?>" data-media-action="list" data-media-layout="grid">
+                            <a href="<?php echo $href; ?>" class="btn btn-light <?php echo $this->getValue("layout") === "grid"? "active": ""; ?>" data-media-action="reload" data-media-layout="grid">
                 				<svg class="media-icon"><use href="#octicon-display-grid" /></svg>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <div class="media-list-upload mt-3" />
-                	<?php print($media_admin->renderList($media_manager->list($relative), $relative)); ?>
+                <div class="media-container mt-3" data-path="<?php echo $pathinfo["slug"]; ?>" data-token="<?php echo $security->getTokenCSRF(); ?>">
+                	<?php print($media_admin->renderList($media_manager->list($pathinfo["relative"]), $pathinfo["relative"])); ?>
                 </div>
             </div>
         </div>

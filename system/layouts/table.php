@@ -11,7 +11,7 @@ declare(strict_types=1);
  |  @copyright  Copyright © 2019 - 2020 pytesNET <info@pytes.net>
  */
 ?>
-<table class="table mt-4 media-list" data-action="<?php echo $this->buildURL("media/upload") ?>" data-path="<?php echo $slug; ?>" data-token="<?php echo $security->getTokenCSRF(); ?>">
+<table class="table mt-4 media-list <?php echo ($this->method === "search")? "media-list-search": "media-list-upload"; ?>">
     <thead>
         <tr>
             <th width="30px" class="th-checkbox" scope="col"></th>

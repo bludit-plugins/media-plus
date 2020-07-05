@@ -20,15 +20,16 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="media-search-form" method="post" action="<?php echo $media_admin->buildURL("media/search", [], true); ?>">
+                <form id="media-search-form" method="post" action="<?php echo $media_admin->buildURL("media/search", [], true); ?>" data-media-form="search">
                     <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                    <input type="hidden" name="path" value="<?php echo MediaManager::slug($relative); ?>" />
+                    <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
+                    <input type="hidden" name="action" value="search" />
 
                     <div class="input-group">
                         <input type="text" class="form-control" name="search" value="<?php echo $media_admin->search; ?>" placeholder="<?php bt_e("Search for..."); ?>" />
                         <div class="input-group-append">
-                            <button name="media_action" value="search" class="btn btn-primary"><?php bt_e("Search"); ?></button>
+                            <button name="action" value="search" class="btn btn-primary"><?php bt_e("Search"); ?></button>
                         </div>
                     </div>
                 </form>
