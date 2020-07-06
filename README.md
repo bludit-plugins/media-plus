@@ -19,6 +19,7 @@ Features
 -   **Revise**, **Rename**, **Move** and **Delete** your stuff quickly
 -   **Embed** your files seamless while editing your posts...
     -   ...with support for **Image**, **Video**, **Audio** & **PDF** files
+-   **File-History**, so you know what already happened
 -   *[COMING]* Automatic **Thumbnail** Creation (with adaptable size)
 -   *[COMING]* A better and configurable way to **Insert** your files
 
