@@ -34,55 +34,81 @@ declare(strict_types=1);
          |                      rename      The file has been renamed.
          |                      revise      The file has been revised.
          |                      edit        The file has been edited.
-         |  @param  string  The slug to the file or folder.
-         |  @param  string  The made change.
+         |  @param  string  The data before the action has been applied or NULL.
+         |                      move        The path to the old location w\ folder / filename
+         |                      rename      The path to the location w\ old folder / filename
+         |                      revise      The path to the old source file or NULL if overwritten
+         |                      edit        NULL
+         |  @param  string  The data after the action has been applied.
+         |                      move        The path to the new location w\ folder / filename
+         |                      rename      The path to the location w\ new folder / filename
+         |                      revise      The path to the new source file
+         |                      edit        The path to the source file
          |
          |  @return bool    TRUE if everything is fluffy, FALSE if not.
          */
-        public function log(string $action, string $slug, /* any */ $after): bool {
-            if(!array_key_exists($slug, $this->db)) {
-                $this->db[$slug] = [ ];
-            }
-            $data = &$this->db[$slug];
+        public function log(string $action, ?string $before, string $after): bool {
+            global $login;
 
-            // Slug has changed
-            if($action === "rename" || $action === "move") {
-                $this->db[$after] = $this->db[$slug];
-                $data = &$this->db[$after];
-                unset($this->db[$slug]);
+            // Check Arguments
+            if(($after = MediaManager::slug($after)) === null) {
+                return false;
+            }
+
+            // Check DB Item
+            if($action === "move" || $action === "rename") {
+                if(array_key_exists($before, $this->db)) {
+                    $this->db[$after] = $this->db[$before];
+                    unset($this->db[$before]);
+                }
+            }
+            if(!array_key_exists($after, $this->db)) {
+                $this->db[$after] = [ ];
             }
 
             // Log Actions
-            $changes = ["action" => $action];
+            $changes = ["action" => $action, "username" => $login->username()];
             switch($action) {
                 case "move":
-                    $changes["before"] = $slug;
-                    $changes["after"] = $after;
+                    $this->db[$after][time()] = array_merge($changes, [
+                        "before"    => $before,
+                        "after"     => $after
+                    ]);
                     break;
                 case "rename":
-                    $changes["before"] = basename($slug);
-                    $changes["after"] = basename($after);
+                    $this->db[$after][time()] = array_merge($changes, [
+                        "before"    => basename($before),
+                        "after"     => basename($after)
+                    ]);
                     break;
                 case "edit":
-                    $changes["before"] = null;
-                    $changes["after"] = $after;
+                    $this->db[$after][time()] = array_merge($changes, [
+                        "before"    => null,
+                        "after"     => null
+                    ]);
                     break;
                 case "revise":
-                    $changes["before"] = $slug;
-                    $changes["after"] = $after;
+                    $this->db[$after][time()] = array_merge($changes, [
+                        "before"    => $before,
+                        "after"     => $after
+                    ]);
+
+                    if(!empty($before)) {
+                        if(!array_key_exists($before, $this->db)) {
+                            $this->db[$before] = [ ];
+                        }
+                        $this->db[$before][time()] = array_merge($changes, [
+                            "before"    => $before,
+                            "after"     => $after
+                        ]);
+                    }
                     break;
-                case "revised":
-                    $changes["before"] = $slug;
-                    $changes["after"] = $after;
-                    break;
+                default:
+                    return false;
             }
 
             // Add Action
-            if(array_key_exists("before", $changes) && array_key_exists("after", $changes)) {
-                $data[time()] = $changes;
-                return $this->save();
-            }
-            return false;
+            return $this->save();
         }
 
         /*

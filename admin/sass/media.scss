@@ -499,6 +499,12 @@ h2 .paw-plus {
         opacity: 1;
     }
 }
+#media-manager-modal {
+    .media-loader {
+        top: -5rem;
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+}
 
 
 //  Media Modals

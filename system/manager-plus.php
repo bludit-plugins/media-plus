@@ -87,10 +87,14 @@ declare(strict_types=1);
          |  @return multi   The files and folders within the directory, null on failure.
          */
         public function list(?string $path = null, int $limit = 0, int $page = 0): ?array {
+            global $media_admin;
+
             $search = $_POST["search"] ?? $_GET["search"] ?? null;
             if(empty($search)) {
                 return parent::list($path, $limit, $page);
             }
+            $media_admin->search = $search;
+            $media_admin->method = "search";
             return $this->search($search, $path);
         }
     }

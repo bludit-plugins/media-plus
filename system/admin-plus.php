@@ -85,7 +85,7 @@ declare(strict_types=1);
             }
 
             // Handle History
-            $media_history->log("edit", $path, $login->username());
+            $media_history->log("edit", null, MediaManager::slug($path));
 
             // Success
             return $this->response(true, bt_("The file could be updated successfully."), [
@@ -113,7 +113,7 @@ declare(strict_types=1);
             }
 
             // Success
-            return $this->response(true, bt_("You favorites have been updated successfully."), [
+            return $this->response(true, bt_("Your favorites have been updated successfully."), [
                 "path"      => $path,
                 "favorite"  => $this->isFavorite($path)
             ]);
@@ -168,32 +168,30 @@ declare(strict_types=1);
          |  @return bool    TRUE if everything is fluffy, FALSE if not.
          */
         protected function updateFavorites(string $slug_old, ?string $slug_new): bool {
-            global $login;
             global $users;
 
-            // Get Login
-            if(empty($login)) {
-                $login = new Login();
-            }
-
             // Get User
-            $user = new User($login->username());
-            $favs = $user->getValue("media_favorites");
-            $favs = is_array($favs)? $favs: [];
+            foreach($users->db AS $user => &$data) {
+                if(!isset($data["media_favorites"])) {
+                    continue;
+                }
 
-            // Update Favorites
-            foreach($favs AS &$fav) {
-                if($fav === $slug_old || strpos($fav, trim($slug_old, "/") . "/") === 0) {
-                    if($slug_new === null) {
-                        $fav = null;
-                    } else {
-                        $fav = substr_replace($fav, trim($slug_new, "/"), 0, strlen(trim($slug_old, "/")));
+                $favs = $data["media_favorites"];
+                if(empty($favs) || !is_array($favs)) {
+                    continue;
+                }
+
+                foreach($favs AS &$fav) {
+                    if($fav === $slug_old || strpos($fav, trim($slug_old, "/") . "/") === 0) {
+                        if($slug_new === null) {
+                            $fav = null;
+                        } else {
+                            $fav = substr_replace($fav, trim($slug_new, "/"), 0, strlen(trim($slug_old, "/")));
+                        }
                     }
                 }
+                $data["media_favorites"] = array_filter($favs);
             }
-
-            // Store Data
-            $users->db[$login->username()]["media_favorites"] = array_filter($favs);
             return $users->save();
         }
 

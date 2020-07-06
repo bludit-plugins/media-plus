@@ -79,7 +79,7 @@ declare(strict_types=1);
                 "create"    => ["POST"],
                 "move"      => ["POST"],
                 "rename"    => ["POST"],
-                "delete"    => ["POST"],
+                "delete"    => ["GET", "POST"],
             ];
         }
 
@@ -144,7 +144,7 @@ declare(strict_types=1);
             $referrer = $_SERVER["HTTP_REFERER"] ?? "";
             if(isset($data["path"])) {
                 $query["path"] = $data["path"];
-                if(is_file(MediaManager::absolute($data["path"])) && !empty($referrer) && strpos($referrer, basename($query["path"])) === false) {
+                if(is_file(MediaManager::absolute($data["path"])) && !empty($referrer) && strpos($referrer, $this->rename ?? basename($query["path"])) === false) {
                     $query["path"] = dirname($query["path"]);
                 }
             } else {
@@ -164,6 +164,7 @@ declare(strict_types=1);
             }
 
             // Redirect
+            unset($this->rename);
             Redirect::url($this->buildURL("media", $query, true));
             die();
         }
@@ -263,6 +264,7 @@ declare(strict_types=1);
                 return $this->response(false, bt_("You cannot upload files to the root directory."));
             }
 
+
             // Set Data
             $files = $_FILES["media"];
             $errors = [];
@@ -287,13 +289,8 @@ declare(strict_types=1);
                 $success[MediaManager::slug($media_manager->lastFile[3])] = $media_manager->lastFile[0];
 
                 // Handle History
-                if(file_exists($path . DS . $name) && $overwrite) {
-                    if($revision) {
-                        $media_history->log("revise", $path . DS . $name, $path . DS . $media_manager->lastRevise);
-                        $media_history->log("revised", $path . DS . $media_manager->lastRevise, $path . DS . $name);
-                    } else {
-                        $media_history->log("revise", $path . DS . $name, null);
-                    }
+                if(is_file($path) && file_exists($path) && $overwrite) {
+                    $media_history->log("revise", ($media_manager->lastRevise)? MediaManager::slug($media_manager->lastRevise): null, MediaManager::slug($path));
                 }
             }
 
@@ -368,6 +365,7 @@ declare(strict_types=1);
             if(($data["newpath"] = MediaManager::absolute($data["newpath"])) === null) {
                 return $this->response(false, bt_("The passed new path is invalid or does not exist."));
             }
+            $slug = MediaManager::slug($path);
 
             // Move Item
             if(($status = $media_manager->move($path, $data["newpath"])) !== true) {
@@ -376,18 +374,18 @@ declare(strict_types=1);
 
             // Handle History
             if(file_exists($data["newpath"] . DS . basename($path))) {
-                $media_history->log("rename", $path, $data["newpath"]);
+                $media_history->log("move", $slug, MediaManager::slug($data["newpath"] . DS . basename($path)));
             }
 
             // [PLUS] Handle Favourites
             if(method_exists($this, "updateFavorites")) {
-                $this->updateFavorites($path, $data["newpath"]);
+                $this->updateFavorites($slug, MediaManager::slug($data["newpath"] . DS . basename($path)));
             }
 
             // Success
-            return $this->response(true, bt_("The item could be moved successfully.", [
+            return $this->response(true, bt_("The item could be moved successfully."), [
                 "path"  => $data["newpath"] . DS . basename($path)
-            ]));
+            ]);
         }
 
         /*
@@ -409,6 +407,7 @@ declare(strict_types=1);
             if(!isset($data["newname"])) {
                 return $this->response(false, bt_a("The action :action was called incorrectly.", [":action" => "/rename"]));
             }
+            $slug = MediaManager::slug($path);
 
             // Rename Item
             if(($status = $media_manager->move($path, dirname($path), $data["newname"])) !== true) {
@@ -417,15 +416,16 @@ declare(strict_types=1);
 
             // Handle History
             if(file_exists(dirname($path) . DS . $data["newname"])) {
-                $media_history->log("rename", $path, dirname($path) . DS . $data["newname"]);
+                $media_history->log("rename", $slug, MediaManager::slug(dirname($path) . DS . $data["newname"]));
             }
 
             // [PLUS] Handle Favourites
             if(method_exists($this, "updateFavorites")) {
-                $this->updateFavorites($path, dirname($path) . DS . $data["newname"]);
+                $this->updateFavorites($slug, MediaManager::slug(dirname($path) . DS . $data["newname"]));
             }
 
             // Success
+            $this->rename = basename($path); // @todo find a better fix
             return $this->response(true, bt_("The item could be renamed successfully."), [
                 "path"  => dirname($path) . DS . $data["newname"]
             ]);
@@ -444,12 +444,14 @@ declare(strict_types=1);
          */
         protected function _delete(string $path, array $data) {
             global $media_manager;
+            global $media_history;
 
             // Check Root
             $root = str_replace(PATH_UPLOADS, "", $path);
             if(in_array($root, ["media", "pages", "profiles", "thumbnails"])) {
                 return $this->response(false, bt_("You cannot remove a system folder."));
             }
+            $slug = MediaManager::slug($path);
 
             // Delete Path
             if(($status = $media_manager->delete($path, ($data["recursive"] ?? "0") === "1")) !== true) {
@@ -458,8 +460,11 @@ declare(strict_types=1);
 
             // [PLUS] Handle Favourites
             if(method_exists($this, "updateFavorites")) {
-                $this->updateFavorites($path, null);
+                $this->updateFavorites($slug, null);
             }
+
+            // Handle History
+            $media_history->delete($slug);
 
             // Success
             return $this->response(true, bt_("The item could be deleted successfully."), [

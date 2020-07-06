@@ -400,7 +400,9 @@ declare(strict_types=1);
                             "js-link-favorite": '<?php bt_e("Favorite"); ?>',
                             "js-button-goback": '<?php bt_e("Go Back"); ?>',
                             "js-media-title":   '<?php echo "Media" . (PAW_MEDIA_PLUS? "+": ""); ?>',
-                            "js-unknown":       '<?php bt_e("An unknown error is occured."); ?>'
+                            "js-unknown":       '<?php bt_e("An unknown error is occured."); ?>',
+                            "js-pdf-unsupport": '<?php bt_e("PDF is not supported on your browser."); ?>',
+                            "js-click-here":    '<?php bt_e("Click here to view the PDF file."); ?>'
                         };
                     }).call(window, window.Media);
 
@@ -522,10 +524,14 @@ declare(strict_types=1);
             ob_end_clean();
 
             // Set Pathdata
+            $pathinfo = MediaManager::pathinfo($_GET["path"] ?? "");
+            if($pathinfo === null) {
+                Redirect::url($media_admin->buildURL("media"));
+                return;
+            }
 
             // Load Admin Page
             ob_start();
-            $pathinfo = MediaManager::pathinfo($_GET["path"] ?? "");
 
             // Load Admin Page
             require "admin" . DS . "admin-page.php";

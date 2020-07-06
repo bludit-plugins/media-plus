@@ -37,9 +37,9 @@ declare(strict_types=1);
                                 </button>
 
                                 <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
-                                <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                                <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                                 <input type="hidden" name="path" value="<?php echo $pathinfo["absolute"]; ?>" />
-                                <input type="hidden" name="media_action" value="rename" />
+                                <input type="hidden" name="action" value="rename" />
                             </div>
                         </div>
                     </form>
@@ -243,38 +243,48 @@ declare(strict_types=1);
                             <?php } else { ?>
                                 <?php foreach($history AS $time => $log) { ?>
                                     <li>
-                                        <strong><?php echo date("d/m/Y - H:i") ?></strong>
+                                        <strong><?php echo date("d/m/Y - H:i:s") ?></strong>
                                         <?php
                                             switch($log["action"]) {
                                                 case "edit":
-                                                    bt_ae("File has been edited by :after", [":after" => $log["after"]]);
+                                                    bt_ae("File has been edited by :user", [":user" => $log["username"]]);
                                                     break;
                                                 case "rename":
-                                                    bt_ae("Renamed from :before into :after", [
-                                                        ":before" => "<code>" . $log["before"] . "</code>",
-                                                        ":after" => "<code>" . $log["after"] . "</code>"
+                                                    bt_ae("Renamed from :before into :after by :user", [
+                                                        ":before"   => "<code>" . $log["before"] . "</code>",
+                                                        ":after"    => "<code>" . $log["after"] . "</code>",
+                                                        ":user"     => $log["username"]
                                                     ]);
                                                     break;
                                                 case "move":
-                                                    bt_ae("Moved from :before to :after", [
-                                                        ":before" => "<code>" . $log["before"] . "</code>",
-                                                        ":after" => "<code>" . $log["after"] . "</code>"
+                                                    bt_ae("Moved from :before to :after by :user", [
+                                                        ":before"   => "<code>" . dirname($log["before"]) . "</code>",
+                                                        ":after"    => "<code>" . dirname($log["after"]) . "</code>",
+                                                        ":user"     => $log["username"]
                                                     ]);
                                                     break;
                                                 case "revise":
-                                                    if(empty($log["after"])) {
-                                                        bt_e("A new version has been uploaded");
-                                                    } else {
-                                                        $url = $this->buildURL("media", ["path" => $log["after"]]);
-                                                        bt_ae("File has been revised, :after", [
-                                                            ":after" => '<a href="'.$url.'">'.bt_("old version").'</a>'
+                                                    if(empty($log["before"])) {
+                                                        bt_ae("New version uploaded by :user", [
+                                                            ":user" => $log["username"]
                                                         ]);
+                                                        break;
                                                     }
-                                                    break;
-                                                case "revised":
-                                                    $url = $this->buildURL("media", ["path" => $log["after"]]);
-                                                    bt_ae("File has been revised, :after", [
-                                                        ":after" => '<a href="'.$url.'">'.bt_("new version").'</a>'
+
+                                                    if($pathinfo["slug"] === $log["after"]) {
+                                                        $rev_text = bt_("View old Version of this file.");
+                                                        $rev_file = $log["before"];
+                                                    } else {
+                                                        $rev_text = bt_("View new Version of this file.");
+                                                        $rev_file = $log["after"];
+                                                    }
+                                                    if(MediaManager::absolute($rev_file) !== null) {
+                                                        $rev_link = $this->buildURL("media", ["path" => $rev_file]);
+                                                    }
+
+                                                    bt_ae("File has been revised by :user.:link", [
+                                                        ":user" => $log["username"],
+                                                        ":link" => isset($rev_link)? ' <a href="'.$rev_link.'">'.$rev_text.'</a>': ''
                                                     ]);
                                                     break;
                                             }

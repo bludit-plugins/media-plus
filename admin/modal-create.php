@@ -21,7 +21,7 @@
             </div>
             <div class="modal-body">
                 <form id="media-create-folder-form" method="post" action="<?php echo $media_admin->buildURL("media/create", [], true); ?>" data-media-form="create">
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="type" value="folder" />

@@ -197,7 +197,7 @@
                 let height = isEmpty("height", args)? null: args.height;
 
                 var style = `width:${width || "100%"};height:${height || "400px"};`;
-                let content = `<object data="${args.source}" type="application/pdf" style="${style}"></object>`;
+                let content = `<object data="${args.source}" type="application/pdf" style="${style}">${Media.strings["js-pdf-unsupport"]} ${render.link("html", {source: args.source, title: Media.strings["js-click-here"]})}</object>`;
                 switch(markup) {
                     case "textile":
                         content = "notextile.. " + content; break;
@@ -245,7 +245,8 @@
 
         // CKEDITOR Editor
         if(typeof CKEDITOR !== "undefined" && CKEDITOR.version.substr(0, 1) === "4") {
-            CKEDITOR.instances.jseditor.insertHtml(render[type]("html", args) + (type === "link"? "&nbsp;": "<br />"), "unfiltered_html");
+            let content = render[type]("html", args).replace("object", "iframe").replace("data", "src");
+            CKEDITOR.instances.jseditor.insertHtml(content + (type === "link"? "&nbsp;": "<br />"), "unfiltered_html");
             return true;
         }
 
@@ -367,17 +368,17 @@
 
             // Click on Modals
             $(".media-modal").on("show.bs.modal", function() {
-                MediaHandler.loader(true);
+                MediaHandler.loader(true, true);
                 modal.css("opacity", 0.5);
             }).on("hidden.bs.modal", function() {
                 modal.css("opacity", 1.0);
-                MediaHandler.loader(false);
+                MediaHandler.loader(false, true);
             });
 
             // Hide Modal & Prevent Loader on Error
             modal.on("hidden.bs.modal", function() {
                 modal.css("opacity", 1.0);
-                MediaHandler.loader(false);
+                MediaHandler.loader(false, true);
             });
         }
         mediaReplaceModal();
@@ -510,12 +511,14 @@
             }
 
             // Change Layout Buttons
-            if(MediaHandler.container.children[0].tagName.toUpperCase() === "TABLE") {
-                actions.querySelector('[data-media-layout="grid"]').classList.remove("active");
-                actions.querySelector('[data-media-layout="table"]').classList.add("active");
-            } else {
-                actions.querySelector('[data-media-layout="grid"]').classList.add("active");
-                actions.querySelector('[data-media-layout="table"]').classList.remove("active");
+            if(actions.querySelector('[data-media-layout]')) {
+                if(MediaHandler.container.children[0].tagName.toUpperCase() === "TABLE") {
+                    actions.querySelector('[data-media-layout="grid"]').classList.remove("active");
+                    actions.querySelector('[data-media-layout="table"]').classList.add("active");
+                } else {
+                    actions.querySelector('[data-media-layout="grid"]').classList.add("active");
+                    actions.querySelector('[data-media-layout="table"]').classList.remove("active");
+                }
             }
         }
 

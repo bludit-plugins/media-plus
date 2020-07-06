@@ -20,8 +20,8 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="media-search-form" method="post" action="<?php echo $media_admin->buildURL("media/search", [], true); ?>" data-media-form="search">
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                <form id="media-search-form" method="post" action="<?php echo $media_admin->buildURL("media", [], true); ?>" data-media-form="search">
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="action" value="search" />

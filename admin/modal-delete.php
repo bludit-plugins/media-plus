@@ -30,7 +30,7 @@
                     </div>
                 </div>
                 <div class="col">
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="action" value="delete" />

@@ -208,15 +208,16 @@
          |  @since  0.2.0
          |
          |  @param  bool    TRUE to set the loader, FALSE to unset it.
+         |  @param  bool    TRUE to start loader on modal, FALSE to do it not.
          |
          |  @return void
          */
-        loader: function(status) {
+        loader: function(status, modal) {
             let loader = this.container.querySelector(".media-loader");
 
             // Add Loader
             if(status) {
-                this.loading = true;
+                this.loading = (typeof modal !== "undefined" && modal === true)? this.loading: true;
 
                 // Append Loader
                 if(loader === null) {
@@ -236,7 +237,7 @@
 
             // Delete Loader
             if(!status) {
-                this.loading = false;
+                this.loading = (typeof modal !== "undefined" && modal === true)? this.loading: false;
 
                 // Remove Loader
                 if(loader !== null) {

@@ -22,6 +22,7 @@
      */
     Media.prototype.search = function(form) {
         if(!Media.admin || this.loading) {
+            console.log(Media.admin, this.loading);
             return false;
         }
 

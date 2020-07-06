@@ -20,7 +20,7 @@ declare(strict_types=1);
 
     <td class="td-filename align-middle">
         <a href="<?php echo $open; ?>" class="text-secondary" data-media-action="list">
-            <strong class="d-inline-block"><?php echo $pathinfo["basename"]; ?></strong>
+            <strong class="d-inline-block"><?php echo $basename; ?></strong>
             <?php
                 if(dirname($pathinfo["absolute"]) === rtrim(PATH_UPLOADS, DS)) {
                     if($pathinfo["basename"] === "media") {

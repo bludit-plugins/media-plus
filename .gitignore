@@ -1,4 +1,15 @@
 ##
+##  PLUS SUPPORTER PACKAGE
+##
+/plugin-plus.php
+/admin/codemirror
+/admin/modal-search.php
+/admin/js/admin-plus.js
+/admin/js/media-plus.js
+/system/admin-plus.php
+/system/manager-plus.php
+
+##
 ##  TRANSLATION DEVELOPMENT
 ##
 /fetch-*

@@ -349,6 +349,10 @@ declare(strict_types=1);
             }
             [$name, $type, $tmp, $error, $size] = array_values($file);
 
+            // Reset File Storage
+            $this->lastFile = [];
+            $this->lastRevise = null;
+
             // Replace Name
             if(is_file($path)) {
                 $file = true;
@@ -357,10 +361,6 @@ declare(strict_types=1);
             } else {
                 $file = false;
             }
-
-            // Reset Data
-            $this->lastFile = [];
-            $this->lastRevise = null;
 
             // Check File Error
             if($error !== UPLOAD_ERR_OK) {
@@ -396,7 +396,7 @@ declare(strict_types=1);
                 if(!@rename($path . DS . $name, $path . DS . $temp)) {
                     return bt_a("The old version of the file ':name' could not be renamed.", [':name' => $name]);
                 }
-                $this->lastRevise = $temp;
+                $this->lastRevise = $path . DS . $temp;
             }
 
             // File Overwrite
@@ -612,10 +612,10 @@ declare(strict_types=1);
             $list = array_merge($folders, $files);
 
             // Split Result to Pages
-            if($limit > 0 && $page >= 0) {
-                $chunks = array_chunk($list, $limit, true);
-                $list = count($chunks) > $page? $chunks[$page]: [ ];
-            }
+            //if($limit > 0 && $page >= 0) {
+            //    $chunks = array_chunk($list, $limit, true);
+            //    $list = count($chunks) > $page? $chunks[$page]: [ ];
+            //}
             return $list;
         }
     }

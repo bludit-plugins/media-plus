@@ -25,7 +25,7 @@
             </div>
             <div class="modal-body">
                 <form id="media-edit-rename-form" method="post" action="<?php echo $media_admin->buildURL("media/rename", [], true); ?>" data-media-form="rename">
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="action" value="rename" />
@@ -41,7 +41,7 @@
 
             <div class="modal-body border-top">
                 <form id="media-edit-move-form" method="post" action="<?php echo $media_admin->buildURL("media/move", [], true); ?>" data-media-form="move">
-                    <input type="hidden" name="nonce" value="<?php echo $security->getTokenCSRF(); ?>" />
+                    <input type="hidden" name="token" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="tokenCSRF" value="<?php echo $security->getTokenCSRF(); ?>" />
                     <input type="hidden" name="path" value="<?php echo $pathinfo["slug"]; ?>" />
                     <input type="hidden" name="action" value="move" />

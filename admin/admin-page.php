@@ -112,11 +112,6 @@
 		if(isset($tools)) {
 			print($tools);
 		} else if(is_file($pathinfo["absolute"]) && PAW_MEDIA_PLUS) {
-            $favorite = $media_admin->buildURL("media/favorite", [
-                "nonce"         => $security->getTokenCSRF(),
-                "media_action"  => "favorite",
-                "path"          => $pathinfo["relative"]
-            ]);
             ?>
         		<div class="tools btn-group">
         	        <a href="<?php echo $favorite; ?>" class="btn btn-outline-danger <?php echo $media_admin->isFavorite($pathinfo["relative"])? "active": ""; ?>" data-media-action="favorite">
