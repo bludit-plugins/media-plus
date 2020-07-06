@@ -109,6 +109,13 @@ declare(strict_types=1);
 
             // Upgrade 0.1.x to 0.2.x
             if(version_compare($version, "0.2.0", "<")) {
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "file.php");
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "form.php");
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "list.php");
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "modal.php");
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "modal-folder.php");
+                @unlink(PAW_MEDIA_PATH . "admin" . DS . "css" . DS . "media.css");
+
                 $this->db = array_merge($this->dbFields, $this->db);
                 return $this->save();
             }

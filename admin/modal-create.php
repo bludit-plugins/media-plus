@@ -1,7 +1,7 @@
 <?php
 /*
  |  Media       The advanced Media & File Manager for Bludit
- |  @file       ./admin/modal-folder.php
+ |  @file       ./admin/modal-create.php
  |  @author     SamBrishes <sam@pytes.net>
  |  @version    0.2.0 [0.1.0] - Beta
  |
