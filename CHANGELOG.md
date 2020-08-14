@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+Version 0.2.1 - Beta
+--------------------
+-   Bugfix: Core Modal still opens on Cover options (and cannot be closed anymore).
+
 Version 0.2.0 - Beta
 --------------------
 -   Add: Support for PDF Files.

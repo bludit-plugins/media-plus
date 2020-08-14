@@ -4,7 +4,7 @@ declare(strict_types=1);
  |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./plugin.php
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.2.0 [0.1.0] - Beta
+ |  @version    0.2.1 - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -27,7 +27,7 @@ declare(strict_types=1);
 
     // Main Plugin Class
     class MediaPlugin extends Plugin {
-        const VERSION = "0.2.0";
+        const VERSION = "0.2.1";
         const STATUS = "Beta";
 
         /*

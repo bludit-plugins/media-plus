@@ -2,7 +2,7 @@
  |  Media       The advanced Media & File Manager for Bludit
  |  @file       ./admin/js/admin.js
  |  @author     SamBrishes <sam@pytes.net>
- |  @version    0.2.0 [0.1.0] - Beta
+ |  @version    0.2.1 - Beta
  |
  |  @website    https://github.com/pytesNET/media
  |  @license    X11 / MIT License
@@ -358,9 +358,14 @@
             // Good-Bye Core Modal
             $(window).off("dragover dragenter");
             $(window).off("drop");
-            $('#jsmediaManagerModal').on('shown.bs.modal', function() {
+            $('#jsmediaManagerModal').on('show.bs.modal', function() {
                 $('#jsmediaManagerModal').modal('dispose');
             });
+
+            // Overwrite
+            openMediaManager = function() {
+                $("#media-manager-modal").modal("show");
+            };
 
             // Hellow Media Modal
             button.html(`<span class="fa fa-image"></span>` + Media.strings["js-media-title"]);
