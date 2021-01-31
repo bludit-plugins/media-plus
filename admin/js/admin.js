@@ -443,15 +443,16 @@
                 }
                 file.previewTemplate.querySelector("[data-dz-errormessage]").innerText = data.message;
             });
-
-            // Complete AJAX Request
+            
+            // Complete File
             Media.dropzone.on("complete", function(file) {
-
                 // Keep File Preview
                 file.previewTemplate.parentElement.replaceChild(file.previewTemplate.cloneNode(true), file.previewTemplate);
-                this.destroy();
+            });
 
-                // Update List
+            // Complete Upload Ququq
+            Media.dropzone.on("queuecomplete", function() {
+                this.destroy();
                 MediaHandler.force = true;
                 MediaHandler.reload().then(
                     () => { mediaInit(); },

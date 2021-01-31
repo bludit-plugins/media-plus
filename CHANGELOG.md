@@ -3,6 +3,7 @@ CHANGELOG
 
 Version 0.2.1 - Beta
 --------------------
+-   Bugfix: Upload of multiple files didn't work on specific situations.
 -   Bugfix: Core Modal still opens on Cover options (and cannot be closed anymore).
 
 Version 0.2.0 - Beta
