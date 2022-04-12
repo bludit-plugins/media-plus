@@ -1,11 +1,11 @@
-Media - The advanced Media & File Manager
+Media+ - The advanced Media & File Manager
 =========================================
 
 The Media Bludit Plugin adds a feature-rich Media & File Manager to your Bludit Website.
 
 You can use **Media** directly on its own custom administration page, but it also takes over the
 known "Images" popup on the content creation view. So you don't need to switch between your browser
-tabs to directly insert your files (the **Media** Plugin supports Audio, Video & PDF files too).
+tabs to directly insert your files (the **Media+** Plugin supports Audio, Video & PDF files too).
 
 **Media requires PHP 7.2.0 (or above), so please check your PHP version first!**
 
