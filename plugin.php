@@ -69,7 +69,7 @@ declare(strict_types=1);
                 "allow_php_upload"      => false,       // Allow PHP upload
                 "allow_js_upload"       => false,       // Allow JavaScript upload
                 "allow_root_upload"     => false,       // Allow File-Upload on Root
-                "custom_mime_types"     => [ ],         // Custom MIME Types with file extensions
+                "custom_mime_types"     => "",          // Custom MIME Types with file extensions
 
                 // Advanced Settings
                 "resolve_folders"       => "symlink",   // Resolve temporary page folders
@@ -79,7 +79,7 @@ declare(strict_types=1);
                 // Default Settings
                 "layout"                => "table",     // Media Manager Layout ("table" or "grid")
                 "items_order"           => "ASC",       // *Items Order (ASC || DESC)
-                "items_per_page"        => 0,           // *Items per Page (0 = all)
+                "items_per_page"        => 0            // *Items per Page (0 = all)
             ];
             return true;
         }
@@ -94,6 +94,7 @@ declare(strict_types=1);
             parent::install($position);
             $this->dbFields["allowed_admin_roles"] = $this->db["allowed_admin_roles"] = ["admin", "editor"];
             $this->dbFields["allowed_modal_roles"] = $this->db["allowed_modal_roles"] = ["admin", "editor", "author"];
+            $this->dbFields["custom_mime_types"] = $this->db["custom_mime_types"] = [];
             return $this->save();
         }
 

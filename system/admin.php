@@ -54,8 +54,9 @@ declare(strict_types=1);
          |  @since  0.1.0
          */
         public function __construct() {
+            global $site;
             if(!Session::started()) {
-                Session::start();
+                Session::start($site->url, $site->isHTTPS());
             }
 
             // Get Last Status
